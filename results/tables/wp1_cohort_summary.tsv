@@ -1,0 +1,14 @@
+cohort	omic	features	samples	patients	n_PDAC	n_normal	n_healthy	n_benign	n_other_cancer	pdac_early	pdac_late	missing_%	pc1_var_%	pc1_cohen_d_pdac_vs_rest	outliers
+GSE15471	mrna	20848	72	36	36	36	0	0	0	0	0	0.0	45.5	1.61	
+GSE62452	mrna	19036	130	85	69	61	0	0	0	49	19	0.0	36.2	1.3	
+GSE16515	mrna	20848	52	36	36	16	0	0	0	0	0	0.0	36.4	1.66	
+GSE85589	mirna	2578	232	232	88	0	19	10	115	0	0	0.0	4.5	1.13	GSM2278798
+GSE59856	mirna	2555	571	571	100	0	150	21	300	19	81	0.0	7.2	0.56	GSM1447661,GSM1447841,GSM1447879,GSM1447883,GSM1448003
+cptac_pdac	methylation	13180	145	113	100	45	0	0	0	64	33	1.9	37.5	2.83	
+cptac_pdac	mirna	694	178	140	140	38	0	0	0	83	51	0.0	13.1	0.31	
+cptac_pdac	mrna	28057	161	140	140	21	0	0	0	83	51	0.0	20.0	2.74	
+cptac_pdac	protein	11662	215	148	140	75	0	0	0	83	51	24.7	33.5	2.49	
+tcga_paad	methylation	486427	184	174	174	10	0	0	0	163	9	15.5	32.9	0.94	
+tcga_paad	mirna	574	172	168	168	4	0	0	0	159	7	0.0	13.3	1.84	TCGA-HV-A7OP-01A
+tcga_paad	mrna	36814	172	168	168	4	0	0	0	159	7	0.0	19.6	1.67	TCGA-F2-6880-01A
+tcga_paad	protein	487	117	117	117	0	0	0	0	109	6	6.8	16.3		

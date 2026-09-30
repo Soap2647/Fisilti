@@ -1,7 +1,7 @@
-"""WP1-04: GEO kohortlarını ön işler ve data/processed/geo/ altına yazar.
+"""WP1-05: GEO kohortlarını ön işler ve data/processed/geo/ altına yazar.
 
 Çıktılar: <GSE>_expr.parquet, <GSE>_labels.tsv, mirna_names.tsv
-Çalıştırma:  .venv\\Scripts\\python.exe scripts/wp1_04_preprocess_geo.py
+Çalıştırma:  .venv\\Scripts\\python.exe scripts/wp1_05_preprocess_geo.py
 """
 
 from fisilti.config import path

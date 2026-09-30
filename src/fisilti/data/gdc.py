@@ -24,6 +24,8 @@ API = "https://api.gdc.cancer.gov"
 OMICS = {
     "mrna": {"data_type": "Gene Expression Quantification", "experimental_strategy": "RNA-Seq"},
     "mirna": {"data_type": "miRNA Expression Quantification", "experimental_strategy": "miRNA-Seq"},
+    # Olgun miRNA düzeyi (MIMAT); serum kohortlarıyla ortak anahtar (K-010)
+    "mirna_mature": {"data_type": "Isoform Expression Quantification", "experimental_strategy": "miRNA-Seq"},
     "methylation": {"data_type": "Methylation Beta Value"},
     "protein": {"data_type": "Protein Expression Quantification"},
 }
@@ -39,14 +41,20 @@ def _filters(project: str, extra: dict[str, str]) -> dict:
     return {"op": "and", "content": content}
 
 
-def query_files(project: str, omic: str) -> pd.DataFrame:
-    """Bir projedeki belirli omik türünün açık dosyalarını örnek bilgisiyle listeler."""
+def query_files(project: str, omic: str, primary_site: str | None = None) -> pd.DataFrame:
+    """Bir projedeki belirli omik türünün açık dosyalarını örnek bilgisiyle listeler.
+
+    `primary_site` çok organlı projelerde (ör. CPTAC-3 -> 'Pancreas') filtre uygular.
+    """
+    extra = dict(OMICS[omic])
+    if primary_site:
+        extra["cases.primary_site"] = primary_site
     fields = [
         "file_id", "file_name", "md5sum", "file_size", "platform",
         "cases.submitter_id", "cases.samples.submitter_id", "cases.samples.sample_type",
     ]
     params = {
-        "filters": json.dumps(_filters(project, OMICS[omic])),
+        "filters": json.dumps(_filters(project, extra)),
         "fields": ",".join(fields),
         "format": "JSON",
         "size": 5000,
@@ -112,6 +120,14 @@ def _read_mirna(f: Path) -> pd.Series:
     return df.set_index("miRNA_ID")["reads_per_million_miRNA_mapped"]
 
 
+def _read_mirna_mature(f: Path) -> pd.Series:
+    """isoforms.quantification: 'mature,MIMATxxxx' bölgeli okumaların RPM'i MIMAT başına toplanır."""
+    df = pd.read_csv(f, sep="\t")
+    df = df[df["miRNA_region"].str.startswith("mature,")]
+    mimat = df["miRNA_region"].str.split(",", n=1).str[1]
+    return df.groupby(mimat.values)["reads_per_million_miRNA_mapped"].sum()
+
+
 def _read_methylation(f: Path) -> pd.Series:
     return pd.read_csv(f, sep="\t", header=None, index_col=0).iloc[:, 0]
 
@@ -124,6 +140,7 @@ def _read_protein(f: Path) -> pd.Series:
 READERS = {
     "mrna": _read_mrna,
     "mirna": _read_mirna,
+    "mirna_mature": _read_mirna_mature,
     "methylation": _read_methylation,
     "protein": _read_protein,
 }

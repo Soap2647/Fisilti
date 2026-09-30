@@ -109,3 +109,38 @@ alt tipler (2) dışlanır.
 PDAC evre dağılımı: IA 5, IB 10, IIA 28, IIB 116, III 3, IV 4 (erken evre = 159).
 TCGA neredeyse tamamen erken evre olduğundan erken/geç ayrımı için değil,
 **erken evre tümör sinyalinin bağımsız doğrulaması** için kullanılır.
+
+## K-009 — LinkedOmics CPTAC miRNA verisinde teknik parti etkisi
+*2026-09-30 · WP1*
+
+**Bulgu:** LinkedOmics CPTAC-PDAC miRNA tablosunda örnekler PC1'de (varyansın
+%51'i) birbirinden tamamen kopuk iki kümeye ayrılıyordu. Kümeler tespit
+derinliğinde farklıydı (~1250 vs ~480 miRNA/örnek; medyan log2 −0,05 vs 4,46)
+ve tümör/normal, merkez (C3L/C3N) veya ülke ile ilişkili değildi. Ham veriden
+parti etiketi, lojistik regresyonla CV-AUC = 1,000 ile tahmin edilebiliyordu.
+
+**Karar:** ComBat ile düzeltmek yerine veri kaynağı değiştirildi (K-010). GDC'nin
+harmonize işlenmiş CPTAC miRNA verisinde bu iki kümeli yapı bulunmamaktadır;
+dolayısıyla etki LinkedOmics işleme sürecine özgüdür.
+
+## K-010 — CPTAC normal miRNA verisi: kopya tespiti ve GDC'ye geçiş
+*2026-09-30 · WP1*
+
+**Bulgu:** LinkedOmics `microRNA_TPM_log2_Normal.cct` dosyasındaki 21 normal
+örneğin **21'i de aynı hastanın tümör verisinin birebir kopyasıdır**
+(Pearson r = 1,0000; `np.allclose` = True). Bilinen belirteçlerde (miR-21,
+miR-216a, miR-217, miR-375) tümör/normal farkı hiç görülmüyordu. Aynı test
+protein (0/67) ve metilasyon (0/32) için kopya göstermedi; mRNA'da asiner genler
+normalde ~64 kat yüksek (biyolojik olarak beklenen).
+
+**Karar:** CPTAC miRNA'sı GDC'deki açık erişimli harmonize isoform dosyalarından
+(CPTAC-3, Pancreas: 146 T / 38 N) yeniden türetildi. Tümörler çalışmanın 140
+hastasıyla sınırlandı. Aynı işlem TCGA-PAAD için de uygulandı.
+
+**Doğrulama (GDC verisi, 140 T / 38 N):** miR-21-5p ↑ (p = 4×10⁻¹⁶),
+miR-196a-5p ↑ (p = 1×10⁻¹³), miR-210-3p ↑ (p = 2×10⁻¹⁴), miR-375-3p ↓
+(p = 1×10⁻⁷), miR-216b-5p ↓ — literatürle uyumlu. Kopya: 0/38.
+
+**Ek kazanım:** Olgun miRNA düzeyinde MIMAT erişim numarası anahtar olarak
+kullanıldı; doku (CPTAC, TCGA) ve serum (GSE85589, GSE59856) kohortları miRBase
+ad değişikliklerinden bağımsız olarak eşleştirilebilir.

@@ -1,17 +1,18 @@
-"""WP1-06: TCGA-PAAD matrislerini standart biçime getirir (data/processed/tcga_paad/).
+"""WP1-07: TCGA-PAAD matrislerini standart biçime getirir (data/processed/tcga_paad/).
 
 - Yalnızca duktal adenokarsinom histolojisi tutulur (nöroendokrin vb. dışlanır, K-008).
 - mRNA: TPM -> log2(TPM+1), Ensembl -> gen sembolü (protein kodlayan + lncRNA; aynı sembolde en yüksek ortalama).
-- miRNA: RPM -> log2(RPM+1) (öncül/precursor düzeyi).
+- miRNA: olgun düzey (MIMAT, wp1_04), RPM -> log2(RPM+1) + düşük ifade filtresi.
 - Örnek adı: TCGA örnek barkodu (ör. TCGA-2J-AAB1-01A); patient = ilk 12 karakter.
 
-Çalıştırma:  .venv\\Scripts\\python.exe scripts/wp1_06_preprocess_tcga.py
+Çalıştırma:  .venv\\Scripts\\python.exe scripts/wp1_07_preprocess_tcga.py
 """
 
 import numpy as np
 import pandas as pd
 
 from fisilti.config import load_config, path
+from fisilti.data.cptac import mirna_log_filter
 
 EARLY = set(load_config()["analysis"]["early_stages"])
 # TCGA primary_diagnosis değerlerinden duktal adenokarsinom kabul edilenler
@@ -34,13 +35,15 @@ def main() -> None:
     ductal = set(clin.index[clin.primary_diagnosis.isin(DUCTAL)])
 
     frames = {}
-    for omic in ["mrna", "mirna", "methylation", "protein"]:
-        f = src / f"{omic}.parquet"
+    # omik -> (ara dosya adı); miRNA olgun düzeyde (wp1_04) okunur
+    sources = {"mrna": "mrna", "mirna": "mirna_mature", "methylation": "methylation", "protein": "protein"}
+    for omic, stem in sources.items():
+        f = src / f"{stem}.parquet"
         if not f.exists():
             print(f"[atla] {omic}: henüz indirilmedi")
             continue
         m = pd.read_parquet(f)
-        files = pd.read_csv(src / f"{omic}_files.tsv", sep="\t").drop_duplicates("sample").set_index("sample")
+        files = pd.read_csv(src / f"{stem}_files.tsv", sep="\t").drop_duplicates("sample").set_index("sample")
         stype = files.loc[m.columns, "sample_type"]
         patient = m.columns.str[:12]
         keep = (stype.isin(["Primary Tumor", "Solid Tissue Normal"]).values) & patient.isin(ductal)
@@ -55,8 +58,8 @@ def main() -> None:
             m.index = best.index
             m.index.name = "gene"
         elif omic == "mirna":
-            m = np.log2(m + 1)
-            m.index.name = "mirna_precursor"
+            m = mirna_log_filter(m)
+            m.index.name = "mimat"
         m.to_parquet(out / f"{omic}.parquet")
         frames[omic] = m
         print(f"[ok] {omic:<11} {m.shape[0]:>6} özellik x {m.shape[1]:>3} örnek | "

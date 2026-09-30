@@ -24,14 +24,13 @@ sources:
     role: discovery
     base_url: https://www.linkedomics.org/data_download/CPTAC-PDAC/
     reference: "Cao L ve ark. Cell 2021;184(19):5031-5052"
+    # miRNA LinkedOmics yerine GDC (CPTAC-3, Pancreas) isoform dosyalarından alınır (K-010)
     files:
       clinical: clinical_table_140.tsv
       mrna_tumor: mRNA_RSEM_UQ_log2_Tumor.cct
       mrna_normal: mRNA_RSEM_UQ_log2_Normal.cct
       protein_tumor: proteomics_gene_level_MD_abundance_tumor.cct
       protein_normal: proteomics_gene_level_MD_abundance_normal.cct
-      mirna_tumor: microRNA_TPM_log2_Tumor.cct
-      mirna_normal: microRNA_TPM_log2_Normal.cct
       methylation_tumor: methylation_betaValue_Tumor.cct
       methylation_normal: methylation_betaValue_Normal.cct
 

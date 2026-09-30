@@ -1,6 +1,8 @@
-"""WP1-05: CPTAC-PDAC omik matrislerini ve örnek etiketlerini data/processed/cptac_pdac/ altına yazar.
+"""WP1-06: CPTAC-PDAC omik matrislerini ve örnek etiketlerini data/processed/cptac_pdac/ altına yazar.
 
-Çalıştırma:  .venv\\Scripts\\python.exe scripts/wp1_05_preprocess_cptac.py
+Önkoşul: wp1_01 (LinkedOmics) ve wp1_04 (GDC miRNA).
+Tümör örnekleri çalışmanın 140 hastasıyla sınırlandırılır.
+Çalıştırma:  .venv\\Scripts\\python.exe scripts/wp1_06_preprocess_cptac.py
 """
 
 import pandas as pd
@@ -15,7 +17,7 @@ def main() -> None:
     clin = cptac.clinical()
     all_samples: set[str] = set()
     for omic in cptac.OMICS:
-        m = cptac.omic_matrix(omic)
+        m = cptac.omic_matrix(omic, patients=clin.index)
         m.to_parquet(out / f"{omic}.parquet")
         all_samples |= set(m.columns)
         lab = cptac.sample_labels(list(m.columns), clin)
