@@ -386,3 +386,31 @@ inflamatuvar) süreçlerden etkilenmesi; (3) platform ve ön-analitik farklılı
 **Durum:** Bu sonuç projenin temel varsayımlarından birini çürütür ve
 raporda birincil bulgu olarak sunulacaktır. Bundan sonraki analizler
 **keşif amaçlıdır** ve ön-kayıtlı sonucu değiştirmez.
+
+## K-020 — Keşif analizi: doku-kan uyumsuzluğu ve serum kohortlarının tekrarlanamazlığı
+*2026-09-30 · WP6 (keşif amaçlı; ön-kayıtlı değildir)*
+
+**E1 — Doku ile serum uyumu yok:** 170 ortak miRNA'da doku log2FC ile serum
+PDAC-sağlıklı etki büyüklüğü arasında Spearman ρ = 0,055 (GSE85589, p = 0,47)
+ve 0,054 (GSE59856, p = 0,49).
+
+**E2 — Serum sinyali kohortlar arasında tekrarlanmıyor:** Her serum kohortunda
+kohort içi CV AUC ≈ 1,00 (0,997–1,000) iken, bir kohortta eğitilen L1-lojistik
+model diğerinde AUC 0,401 ve 0,480 verdi. İki kohortun 880 ortak miRNA'daki tek
+değişkenli etki büyüklükleri arasında ρ = 0,022 (p = 0,51); GSE59856'nın en güçlü
+20 miRNA'sından yalnızca 9'u GSE85589'da aynı yönde. GSE59856'da |Cohen d| > 1
+olan 97 miRNA vardır (GSE85589: 23).
+
+**E3 — Doku adaylarıyla sınırlı serum modeli de aktarılamıyor:** 0,493 ve 0,355.
+
+**Yorum:** Kamuya açık bu iki serum miRNA kohortunda kohort içi "mükemmel"
+ayrım, kohortlar arasında tekrarlanmamaktadır. En olası açıklama, kohorta özgü
+ön-analitik/teknik farklılıklar (örnek toplama, saklama, işleme; vaka ve
+kontrollerin farklı koşullarda toplanması) ve platform farklarıdır; mevcut veriyle
+bu nedenler ayrıştırılamaz. Sonuç olarak bu kohortlar, doku kaynaklı bir paneli
+doğrulamak (ya da çürütmek) için güvenilir bir zemin sunmayabilir; bu durum
+ön-kayıtlı olumsuz sonucu (K-019) geçersiz kılmaz, ancak yorumunu sınırlar.
+
+**Bilimsel çıkarım:** Serum miRNA biyobelirteç çalışmalarında tek kohortta elde
+edilen yüksek AUC'ler, bağımsız kohort ve platform doğrulaması olmadan
+güvenilir kabul edilmemelidir.
