@@ -153,6 +153,18 @@ def gene_annotation(files: pd.DataFrame, out_dir: Path) -> pd.DataFrame:
     return df.set_index("gene_id")[["gene_name", "gene_type"]]
 
 
+def _primary_diagnosis(diagnoses: list[dict]) -> dict:
+    """Bir vakanın birincil tümör tanısını seçer.
+
+    GDC bazı vakalarda birden fazla tanı kaydı tutar (ör. sonradan gelişen
+    metastaz). Liste sırası güvenilir değildir; evre bilgisi birincil kayıttadır.
+    """
+    for d in diagnoses:
+        if d.get("diagnosis_is_primary_disease") is True or d.get("classification_of_tumor") == "primary":
+            return d
+    return diagnoses[0] if diagnoses else {}
+
+
 def clinical(project: str) -> pd.DataFrame:
     """Vaka düzeyinde klinik veri (evre, yaş, cinsiyet, sağkalım)."""
     fields = [
@@ -162,6 +174,7 @@ def clinical(project: str) -> pd.DataFrame:
         "diagnoses.ajcc_pathologic_t", "diagnoses.ajcc_pathologic_n", "diagnoses.ajcc_pathologic_m",
         "diagnoses.primary_diagnosis", "diagnoses.tumor_grade",
         "diagnoses.days_to_last_follow_up",
+        "diagnoses.diagnosis_is_primary_disease", "diagnoses.classification_of_tumor",
     ]
     params = {
         "filters": json.dumps(
@@ -174,7 +187,7 @@ def clinical(project: str) -> pd.DataFrame:
     hits = requests.get(f"{API}/cases", params=params, timeout=120).json()["data"]["hits"]
     rows = []
     for h in hits:
-        d = (h.get("diagnoses") or [{}])[0]
+        d = _primary_diagnosis(h.get("diagnoses") or [])
         demo = h.get("demographic") or {}
         rows.append(
             {

@@ -89,5 +89,23 @@ tümör/normal ayrımında öne çıkan genlerin bir kısmı kanser biyolojisi d
 bileşimi farkını yansıtabilir (ör. asiner enzim genlerinin tümörde "azalması").
 CPTAC her örnek için neoplastik, asiner, stromal vb. fraksiyonları sunar.
 
-**Karar:** Aday belirteçler, doku fraksiyonlarıyla korelasyon açısından
+**Karar (K-007):** Aday belirteçler, doku fraksiyonlarıyla korelasyon açısından
 denetlenir; kanda ölçüm için tümörde *artan* ve salgılanan adaylar önceliklendirilir.
+
+## K-008 — TCGA-PAAD: birincil tanı seçimi ve histoloji filtresi
+*2026-09-30 · WP1*
+
+**Sorun:** GDC bazı vakalarda birden fazla tanı kaydı tutar (ör. sonradan
+gelişen metastaz). İlk kaydın alınması 35 vakada evrenin, bazı vakalarda da
+histolojinin yanlış okunmasına yol açıyordu (ör. TCGA-2J-AAB9: ilk kayıt metastaz).
+
+**Karar:** `diagnosis_is_primary_disease = True` olan kayıt kullanılır
+(`gdc._primary_diagnosis`, birim testli). Yalnızca duktal adenokarsinom
+histolojileri tutulur (Infiltrating duct carcinoma NOS, Adenocarcinoma NOS,
+Mucinous adenocarcinoma); nöroendokrin karsinom (8), indiferansiye ve karışık
+alt tipler (2) dışlanır.
+
+**Sonuç:** 168 PDAC tümörü + 4 normal; evresi bilinmeyen vaka 35 → 2.
+PDAC evre dağılımı: IA 5, IB 10, IIA 28, IIB 116, III 3, IV 4 (erken evre = 159).
+TCGA neredeyse tamamen erken evre olduğundan erken/geç ayrımı için değil,
+**erken evre tümör sinyalinin bağımsız doğrulaması** için kullanılır.

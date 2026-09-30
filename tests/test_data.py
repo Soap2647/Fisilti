@@ -5,6 +5,7 @@ import pandas as pd
 import pytest
 
 from fisilti.data.cptac import sample_labels
+from fisilti.data.gdc import _primary_diagnosis
 from fisilti.data.geo import _stub, parse_characteristics, read_series_matrix
 from fisilti.data.geo_preprocess import _avg_replicates, _early, _stage_norm
 
@@ -87,6 +88,17 @@ def test_avg_replicates_merges_only_same_patient_and_group():
     assert e["a"].tolist() == [2.0, 3.0]
     assert l.loc["a", "n_replicates"] == 2
     assert l.loc["b", "n_replicates"] == 1
+
+
+def test_primary_diagnosis_skips_metastasis_record():
+    # Gerçek vaka TCGA-2J-AAB9: ilk kayıt metastaz, evre ikinci kayıtta.
+    dx = [
+        {"classification_of_tumor": "metastasis", "diagnosis_is_primary_disease": False},
+        {"classification_of_tumor": "primary", "diagnosis_is_primary_disease": True,
+         "ajcc_pathologic_stage": "Stage IIB"},
+    ]
+    assert _primary_diagnosis(dx)["ajcc_pathologic_stage"] == "Stage IIB"
+    assert _primary_diagnosis([]) == {}
 
 
 def test_cptac_labels_mask_tumor_only_fields_for_normals():
