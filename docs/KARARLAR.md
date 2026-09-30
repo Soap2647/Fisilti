@@ -202,3 +202,55 @@ miRNA %59, metilasyon %70. Kendi R² hesabımız MOFA+'ın iç hesabıyla birebi
   taşıdığını düşündürür: PDAC-normal ayrımı için geliştirilen bir panelin erken
   evrede de çalışması beklenir. Bu, WP6'da erken/geç evre duyarlılığı ayrı
   raporlanarak sınanacaktır.
+
+## K-013 — WP3 modelleme protokolü ve doku performansının doğru yorumu
+*2026-09-30 · WP3*
+
+**Protokol:** Omik başına tümör/normal sınıflandırması; 5 katlı × 5 tekrarlı
+hasta-gruplu dış CV; her dış eğitim katmanında 3 katlı grup-CV + Optuna (15
+deneme, TPE). Ön filtre (en fazla 200 özellik) pipeline'ın parçasıdır ve her iç
+katmanda yeniden öğrenilir. Modeller: L1-lojistik (referans), XGBoost, LightGBM.
+Füzyon: kapılı dikkatli MIL (torba = örnek, parça = ölçülmüş omik görünümü;
+görünüm başına ön filtre 30–50 özellik; 3 tohumlu topluluk; eğitim hastalarının
+%20'si ile erken durdurma). Aynı dış katmanlar tüm modellerde kullanılır.
+
+**İki senaryo:** `free` (tüm özellikler, iki yön) ve `blood` (yalnızca tümörde
+artan + asiner program dışlaması: tümörlerde asiner fraksiyonla ρ > 0,5).
+Kan yönelimli kısıtlar dokuda anlamlı AUC kaybına yol açmadı (tüm omiklerde
+fark güven aralıkları içinde).
+
+**Hesaplama notu:** Tek değişkenli filtre istatistikleri aynı eğitim alt kümesi
+için önbelleklenir (Optuna denemeleri aynı iç katmanı yeniden kullanır);
+sonuç değişmez (birim testli), süre ~25 kat kısalır.
+
+**Yorum uyarısı (sunum için bağlayıcı):** Doku düzeyinde tümör/normal AUC'leri
+(0,96–0,99) *kolay* bir problemi ölçer ve kan testi performansı değildir.
+Panelin gerçek sınavı bağımsız serum kohortlarıdır (GSE85589, GSE59856; WP6).
+Raporda doku ve serum sonuçları ayrı başlıklarda verilir.
+
+**Aday seçimi:** Kararlılık seçimi (blood senaryosu, 75 model = 25 dış katman ×
+3 model); seçim sıklığı ile sıralama. Tek değişkenli AUC/log2FC betimleyicidir.
+
+## K-014 — Attention-MIL'de ölçüm deseni kısayolu ve çoklu-omik füzyonun katkısı
+*2026-09-30 · WP3*
+
+**Bulgu:** CPTAC'ta ölçülen omik sayısı etiketle tamamen örtüşür: yalnızca 1–2
+omiği ölçülmüş 71 örneğin **tamamı normaldir** (PDAC: 0). Tüm örneklerle
+eğitilen MIL genel AUC 0,986 verdi, ancak 4 omiği tam 117 örnekte AUC 0,935'e
+düştü (tek omikli modellerin tümünün altında). Model "az görünüm = normal"
+kısayolunu öğrenmiş olabilir; genel AUC bu nedenle **raporlanmaz**.
+
+**Karar:** MIL yalnızca 4 omiği tam örneklerde (100 T / 17 N) eğitilir ve
+değerlendirilir (`--complete-only`). Sonuç: AUC 0,973 (%95 GA 0,918–1,000;
+tekrarlar arası 0,952 ± 0,033), erken evre 0,975.
+
+**Karşılaştırma (aynı 117 örnek, blood senaryosu):** mRNA-LightGBM 0,992;
+miRNA-LightGBM 0,987; protein-L1 0,974; metilasyon-XGBoost 0,964; MIL 0,973.
+
+**Yorum:** Dokuda çoklu-omik füzyon en iyi tek omiğin üzerine anlamlı katkı
+sağlamaz; tümör/normal sinyali her omikte zaten güçlüdür. Bu, panelin tek
+ölçüm platformunda (serum miRNA → RT-qPCR veya plazma proteini → ELISA)
+kurulabileceğini destekler; bu da klinik maliyet ve uygulanabilirlik açısından
+avantajdır. MIL'in katkısı yorumlanabilirliktir (örnek başına omik dikkati).
+Genel ilke: eksik görünümlerin deseni etiketle ilişkiliyse füzyon modelleri
+yalnızca tam örneklerde ya da desenden bağımsız bir tasarımla değerlendirilmelidir.

@@ -1,0 +1,2 @@
+view	config	model	n_tumor	n_normal	auc_mean_over_repeats	auc_sd_over_repeats	auc	auc_ci_lo	auc_ci_hi	auc_early_vs_normal	early_ci_lo	early_ci_hi
+fusion	blood	attention_mil	140	92	0.983	0.0062	0.9861	0.9612	0.9988	0.9864	0.9639	0.9991
