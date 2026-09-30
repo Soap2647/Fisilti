@@ -1,0 +1,17 @@
+[build-system]
+requires = ["setuptools>=69"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "fisilti"
+version = "0.1.0"
+description = "Erken evre pankreas kanseri için çoklu-omik, kan tabanlı biyobelirteç paneli keşfi"
+authors = [{ name = "Mert Yasin Yılmaz" }]
+requires-python = ">=3.11"
+license = { text = "MIT" }
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

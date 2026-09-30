@@ -1,0 +1,80 @@
+# Fısıltı — merkezi yapılandırma
+# Tüm betikler yolları, veri kaynaklarını ve rastgelelik tohumunu buradan okur.
+
+project:
+  name: Fisilti
+  seed: 42
+
+paths:
+  raw: data/raw
+  interim: data/interim
+  processed: data/processed
+  figures: results/figures
+  tables: results/tables
+
+# ---------------------------------------------------------------------------
+# Veri kaynakları
+# role:
+#   discovery        -> MOFA+ ve model eğitimi (çoklu-omik, eşleşmiş örnekler)
+#   validation_tissue-> bağımsız doku kohortu, dış doğrulama
+#   validation_blood -> kan/serum kohortu, sıvı biyopsi uygunluğunun sınanması
+# ---------------------------------------------------------------------------
+sources:
+  cptac_pdac:
+    role: discovery
+    base_url: https://www.linkedomics.org/data_download/CPTAC-PDAC/
+    reference: "Cao L ve ark. Cell 2021;184(19):5031-5052"
+    files:
+      clinical: clinical_table_140.tsv
+      mrna_tumor: mRNA_RSEM_UQ_log2_Tumor.cct
+      mrna_normal: mRNA_RSEM_UQ_log2_Normal.cct
+      protein_tumor: proteomics_gene_level_MD_abundance_tumor.cct
+      protein_normal: proteomics_gene_level_MD_abundance_normal.cct
+      mirna_tumor: microRNA_TPM_log2_Tumor.cct
+      mirna_normal: microRNA_TPM_log2_Normal.cct
+      methylation_tumor: methylation_betaValue_Tumor.cct
+      methylation_normal: methylation_betaValue_Normal.cct
+
+  tcga_paad:
+    role: validation_tissue
+    gdc_project: TCGA-PAAD
+    reference: "TCGA Research Network. Cancer Cell 2017;32(2):185-203"
+
+  GSE15471:
+    role: validation_tissue
+    platform: GPL570      # Affymetrix HG-U133 Plus 2.0
+    reference: "Badea L ve ark. Hepatogastroenterology 2008"
+  GSE62452:
+    role: validation_tissue
+    platform: GPL6244     # Affymetrix HuGene 1.0 ST
+    reference: "Yang S ve ark. Cancer Res 2016"
+  GSE16515:
+    role: validation_tissue
+    platform: GPL570
+    reference: "Pei H ve ark. Cancer Cell 2009"
+
+  GSE85589:
+    role: validation_blood
+    platform: GPL19117    # Affymetrix miRNA 4.0
+    note: "Serum miRNA; pankreas kanseri ve sağlıklı kontrol"
+  GSE59856:
+    role: validation_blood
+    note: "Serum miRNA; pankreas ve safra yolu kanseri, benign ve sağlıklı kontrol"
+
+  icgc_paca_ca:
+    role: excluded
+    note: >
+      ICGC DCC portalı Haziran 2024'te kapandı; PACA-CA verisi yalnızca DACO
+      kontrollü erişimle sunuluyor. Yerine CPTAC-PDAC ve serum kohortları kullanıldı
+      (bkz. docs/KARARLAR.md, K-001).
+
+# ---------------------------------------------------------------------------
+# Analiz parametreleri (WP ilerledikçe doldurulacak)
+# ---------------------------------------------------------------------------
+analysis:
+  early_stages: ["I", "IA", "IB", "II", "IIA", "IIB"]
+  cv:
+    outer_folds: 5
+    inner_folds: 5
+    repeats: 10
+  panel_size: [5, 10]

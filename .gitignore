@@ -1,0 +1,26 @@
+# Ortam
+.venv/
+__pycache__/
+*.pyc
+.ipynb_checkpoints/
+.pytest_cache/
+
+# Veri (büyük; MANIFEST.tsv ile yeniden indirilebilir)
+data/raw/*
+!data/raw/MANIFEST.tsv
+data/interim/
+data/processed/
+*.part
+
+# Model çıktıları
+results/models/
+
+# IDE / OS
+.vscode/
+.idea/
+Thumbs.db
+desktop.ini
+
+# Paket derleme
+*.egg-info/
+

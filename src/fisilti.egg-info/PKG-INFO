@@ -1,0 +1,7 @@
+Metadata-Version: 2.4
+Name: fisilti
+Version: 0.1.0
+Summary: Erken evre pankreas kanseri için çoklu-omik, kan tabanlı biyobelirteç paneli keşfi
+Author: Mert Yasin Yılmaz
+License: MIT
+Requires-Python: >=3.11
