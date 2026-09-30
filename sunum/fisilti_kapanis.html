@@ -1,0 +1,397 @@
+<title>Fısıltı Kapanış</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,wght@0,400;0,600;0,700;1,400&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@500&display=swap">
+<style>
+/* Sinematik kapanış: tek koyu bakış. Tam ekran 3B sahne, ortada seyrek altyazılar, flaş katmanı. */
+:root {
+  --bg: #04070F;
+  --ink: #F2EDE3;
+  --muted: #A8B2C8;
+  --coral: #F08A5D;
+  --gold: #FFD08A;
+  --serif: 'Source Serif 4', Georgia, 'Times New Roman', serif;
+  --sans: 'IBM Plex Sans', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --mono: 'IBM Plex Mono', ui-monospace, Consolas, monospace;
+  color-scheme: dark;
+}
+html, body { height: 100%; }
+body { background: var(--bg); color: var(--ink); font-family: var(--sans); overflow: hidden; }
+#stage { position: fixed; inset: 0; width: 100%; height: 100%; display: block; }
+#flash { position: fixed; inset: 0; background: #FFF4EA; opacity: 0; pointer-events: none; }
+.cap { position: fixed; left: 50%; transform: translateX(-50%); bottom: 12%; width: min(1100px, calc(100% - 32px));
+  text-align: center; opacity: 0; pointer-events: none; }
+.cap p { margin: 0; }
+.cap .line { font-family: var(--serif); font-size: clamp(22px, 2.6vw, 44px); font-style: italic; line-height: 1.25; text-wrap: balance; }
+.cap .small { font-family: var(--sans); font-size: clamp(12px, 1vw, 16px); letter-spacing: 0.22em; text-transform: uppercase; color: var(--muted); margin-top: 10px; }
+.cap.top { bottom: auto; top: 9%; }
+.tag { position: fixed; transform: translate(-50%, 0); font-family: var(--mono); font-size: clamp(11px, 1vw, 18px);
+  color: var(--gold); opacity: 0; white-space: nowrap; pointer-events: none; text-shadow: 0 0 12px rgba(255, 208, 138, 0.5); }
+#replay { position: fixed; right: max(16px, 3vw); bottom: calc(16px + env(safe-area-inset-bottom, 0px)); font: 500 14px var(--sans);
+  color: var(--ink); background: rgba(10, 16, 32, 0.7); border: 1px solid rgba(242, 237, 227, 0.2); border-radius: 999px; padding: 8px 16px; cursor: pointer; }
+#replay:focus-visible { outline: 2px solid var(--coral); outline-offset: 2px; }
+body.render #replay { display: none; }
+</style>
+
+<canvas id="stage" aria-label="Beden, pankreas dokusu ve kan damarı içinde ilerleyen sinematik 3B animasyon"></canvas>
+<div id="flash"></div>
+<div class="cap" data-t="2.4,6.6"><p class="line">Her şey bir fısıltıyla başlar.</p></div>
+<div class="cap" data-t="11.6,16.4"><p class="small">Pankreas</p></div>
+<div class="cap" data-t="22.5,30.2"><p class="line">Sağlıklı doku.</p><p class="small">Pankreas · asiner hücreler</p></div>
+<div class="cap" data-t="33.5,41.4"><p class="line">Tümör sessizce büyür; sağlıklı doku kaybolur.</p></div>
+<div class="cap" data-t="44.6,53.4"><p class="line">Ve kana bir iz bırakır.</p></div>
+<div class="cap top" data-t="55.2,63.4"><p class="small">8 protein · tek kan testi · vizyon: plazmada doğrulanacak</p></div>
+<div class="cap" data-t="67.4,73.2"><p class="line">Kandaki fısıltıyı duymak.</p><p class="small">Mert Yasin Yılmaz · Kastamonu Üniversitesi · 2026</p></div>
+<button id="replay" type="button">Baştan oynat</button>
+
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/CopyShader.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/LuminosityHighPassShader.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/EffectComposer.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/RenderPass.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/ShaderPass.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/UnrealBloomPass.js"></script>
+<script>
+(() => {
+  const RENDER = location.hash === '#render';
+  if (RENDER) document.body.classList.add('render');
+  const TOTAL = 74, TAU = Math.PI * 2;
+  const hx = s => { const n = parseInt(s.slice(1), 16); return [(n >> 16 & 255) / 255, (n >> 8 & 255) / 255, (n & 255) / 255]; };
+  const C = {
+    star: hx('#8FA4CC'), holo: hx('#6FA3E0'), coral: hx('#F08A5D'), gold: hx('#FFD08A'), pink: hx('#E58FB0'),
+    pinkL: hx('#F2B6C8'), blood: hx('#8E2A40'), rbc: hx('#C23A50'), dim: hx('#1E2A48'), cream: hx('#F2EDE3'), warp: hx('#FF9A6B')
+  };
+  const mix = (a, b, t) => [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t, a[2] + (b[2] - a[2]) * t];
+  const ss = (e0, e1, x) => { const t = Math.min(1, Math.max(0, (x - e0) / (e1 - e0))); return t * t * (3 - 2 * t); };
+  const h = (i, k) => { const x = Math.sin(i * 12.9898 + k * 78.233) * 43758.5453; return x - Math.floor(x); };
+  const lerp = (a, b, t) => a + (b - a) * t;
+
+  // ---- Zaman çizelgesi (ses sentezi de aynı listeyi kullanır: window.__film.cues) ----
+  const WELL_T = k => 55 + k * 1.1;
+  const PROTEINS = ['SULF1', 'LGALS3BP', 'NMI', 'LAMC2', 'THBS1', 'CD55', 'GLA', 'SERPINB5'];
+  const TUMOR_N = 160, TUMOR_T = k => 31.5 + k * 0.062;
+  const CUES = [];
+  [1.0, 2.3, 3.6, 4.9, 6.2].forEach(t => CUES.push({ t, type: 'heart', gain: 0.9 }));
+  CUES.push({ t: 7.0, type: 'gather', dur: 3.0 });
+  CUES.push({ t: 7.0, type: 'drone', dur: 13.5, rise: 1 });
+  CUES.push({ t: 11.0, type: 'glow', freq: 110 });
+  CUES.push({ t: 14.2, type: 'riser', dur: 3.1 });
+  CUES.push({ t: 17.0, type: 'whoosh', dur: 3.6, big: 1 });
+  CUES.push({ t: 20.35, type: 'boom', gain: 1.0 });
+  CUES.push({ t: 20.5, type: 'tissue', dur: 22.0 });
+  for (let k = 0; k < 26; k++) CUES.push({ t: 21 + h(k, 50) * 20, type: 'bubble', freq: 500 + h(k, 51) * 900 });
+  for (let k = 0; k < TUMOR_N; k += 6) CUES.push({ t: TUMOR_T(k), type: 'crackle', pan: h(k, 52) * 2 - 1 });
+  CUES.push({ t: 31.0, type: 'dissonance', dur: 12.0 });
+  for (let k = 0; k < 12; k++) CUES.push({ t: 42.6 + k * 0.46 + h(k, 53) * 0.2, type: 'ping', freq: 1320 + h(k, 54) * 900, pan: h(k, 55) * 1.6 - 0.8 });
+  CUES.push({ t: 46.3, type: 'whoosh', dur: 2.6, big: 0 });
+  CUES.push({ t: 46.5, type: 'flow', dur: 7.6 });
+  CUES.push({ t: 53.7, type: 'reverse', dur: 0.6 });
+  CUES.push({ t: 54.0, type: 'boom', gain: 0.55 });
+  const PENTA = [220.0, 261.63, 293.66, 329.63, 392.0, 440.0, 523.25, 587.33];
+  PROTEINS.forEach((_, k) => CUES.push({ t: WELL_T(k), type: 'chime', freq: PENTA[k] * 2, pan: -0.7 + k * 0.2 }));
+  CUES.push({ t: 64.5, type: 'boom', gain: 1.2 });
+  CUES.push({ t: 64.5, type: 'pad', dur: 9.0 });
+  [70.4, 71.7].forEach(t => CUES.push({ t, type: 'heart', gain: 0.6 }));
+
+  // ---- Kamera anahtar kareleri: [zaman, konum, bakış] ; 20.5 ve 54'te flaş altında kesme ----
+  const KEYS = [
+    [0, [0, 0.6, 14], [0, 0.6, 0]],
+    [7, [0, 0.9, 9.5], [0, 0.6, 0]],
+    [11, [0.3, 0.6, 5.8], [0, 0.4, 0]],
+    [17, [0.05, 0.3, 1.7], [0, 0.25, -4]],
+    [20.5, [0, 0.25, -11.5], [0, 0.25, -20]],
+    [20.5001, [0, 0.2, 11], [0, 0, 0]],
+    [31, [1.2, 0.6, 8.6], [0, 0, 0]],
+    [42, [0.4, 0.3, 4.8], [0, 0.1, 0]],
+    [46.2, [3.3, 0.4, 5.2], [5, 0, 0]],
+    [50, [5, 0, 2.6], [5, 0, -6]],
+    [54, [5, 0, 1.6], [5, 0, -8]],
+    [54.0001, [0, 0, 9.8], [0, -0.1, 0]],
+    [64, [0, 0, 8.6], [0, -0.1, 0]],
+    [74, [0, 0, 11.5], [0, 0, 0]]
+  ];
+  function camAt(t) {
+    let a = KEYS[0], b = KEYS[KEYS.length - 1];
+    for (let k = 0; k < KEYS.length - 1; k++) if (t >= KEYS[k][0] && t <= KEYS[k + 1][0]) { a = KEYS[k]; b = KEYS[k + 1]; break; }
+    const u = b[0] === a[0] ? 1 : ss(a[0], b[0], t);
+    // Dalışta hızlanarak ilerleme (ease-in)
+    const w = a[0] === 17 ? Math.pow((t - 17) / 3.5, 2.2) : u;
+    const p = a[1].map((v, i) => lerp(v, b[1][i], w)), l = a[2].map((v, i) => lerp(v, b[2][i], w));
+    if (t > 17 && t < 20.5) { const s = 0.03 * ss(17, 20.3, t); p[0] += Math.sin(t * 43) * s; p[1] += Math.cos(t * 37) * s; }
+    return [p, l];
+  }
+
+  // ---- Paylaşılan geometri ----
+  const ACINI = Array.from({ length: 10 }, (_, q) => {
+    let x, y, z, k = 0;
+    do { x = (h(q + k * 17, 60) - 0.5) * 11; y = (h(q + k * 17, 61) - 0.5) * 6.4; z = -3.2 + h(q + k * 17, 62) * 3.6; k++; }
+    while (Math.abs(y - 0.5 * Math.sin(x * 0.45)) < 1.3 && k < 20);
+    return [x, y, z];
+  });
+  const fib = (m, n) => { const y = 1 - 2 * (m + 0.5) / n, r = Math.sqrt(1 - y * y), th = m * 2.399963; return [Math.cos(th) * r, y, Math.sin(th) * r]; };
+  const ductY = x => 0.5 * Math.sin(x * 0.45);
+  const sphereDir = (i, k) => { const th = h(i, k) * TAU, ph = Math.acos(2 * h(i, k + 1) - 1); return [Math.sin(ph) * Math.cos(th), Math.cos(ph), Math.sin(ph) * Math.sin(th)]; };
+  function tumorPos(k) {
+    const x = (h(k, 7) - 0.5) * 3, d = sphereDir(k, 8), dist = 0.3 + 1.9 * Math.sqrt(k / TUMOR_N);
+    return [x + d[0] * dist, ductY(x) + d[1] * dist * 0.8, d[2] * dist * 0.8];
+  }
+  const WELLS = PROTEINS.map((_, k) => [-3.3 + (k % 4) * 2.2, 0.95 - Math.floor(k / 4) * 1.9, 0]);
+  const VX = 5, VL = 15, vesselZ = (u, t, sp) => ((u * VL + t * sp) % VL) - VL - 0.4;
+
+  // "Fısıltı" yazısından parçacık hedefleri
+  let TEXT = [];
+  function buildText() {
+    const cv = document.createElement('canvas'); cv.width = 1400; cv.height = 360;
+    const g = cv.getContext('2d'); g.fillStyle = '#fff'; g.textAlign = 'center'; g.textBaseline = 'middle';
+    g.font = "700 250px 'Source Serif 4', Georgia, serif"; g.fillText('Fısıltı', 700, 175);
+    const d = g.getImageData(0, 0, 1400, 360).data, pts = [];
+    for (let y = 0; y < 360; y += 4) for (let x = 0; x < 1400; x += 4) if (d[(y * 1400 + x) * 4 + 3] > 140) pts.push([(x - 700) / 128, (175 - y) / 128 + 0.45, 0]);
+    TEXT = pts.length ? pts : [[0, 0, 0]];
+  }
+
+  // ---- Parçacık sistemi (N) ----
+  const N = 9000;
+  function stars(i, t, o) {
+    const d = sphereDir(i, 1), r = 16 + h(i, 3) * 22;
+    o.x = d[0] * r; o.y = d[1] * r * 0.7; o.z = d[2] * r - 6;
+    o.c = C.star; o.s = 2.6 + h(i, 4) * 2; o.a = 0.25 + 0.2 * Math.sin(t * 1.7 + h(i, 5) * TAU);
+  }
+  function body(i, t, o) {
+    if (i % 7 === 0) { // pankreas
+      const u = h(i, 2), th = h(i, 3) * TAU, rr = (0.17 * (1 - 0.55 * u)) * Math.sqrt(h(i, 4));
+      o.x = -0.78 + u * 1.55; o.y = 0.28 + 0.1 * Math.sin(u * 3.1) - 0.12 * u + rr * Math.cos(th); o.z = 0.05 + rr * Math.sin(th);
+      const on = ss(10.4, 12.2, t);
+      o.c = mix(C.holo, C.coral, on); o.s = 4.2 + 1.2 * on; o.a = 0.25 + 0.3 * on;
+      return;
+    }
+    const part = h(i, 3);
+    let x, y, z;
+    if (part < 0.12) { const d = sphereDir(i, 4); x = d[0] * 0.42; y = 2.35 + d[1] * 0.5; z = d[2] * 0.4; }
+    else if (part < 0.17) { const th = h(i, 4) * TAU; x = Math.cos(th) * 0.18; z = Math.sin(th) * 0.16; y = 1.82 + h(i, 5) * 0.18; }
+    else if (part < 0.9) {
+      y = -1.35 + h(i, 4) * 3.2; const th = h(i, 5) * TAU;
+      const a = 0.82 + 0.4 * ss(0.9, 1.75, y) - 0.12 * ss(-0.1, -1.0, y) + 0.1 * ss(-0.9, -1.35, y), b = 0.46 + 0.05 * ss(0.5, 1.5, y);
+      x = a * Math.cos(th); z = b * Math.sin(th);
+    } else {
+      const side = h(i, 4) < 0.5 ? -1 : 1, u = h(i, 5), th = h(i, 6) * TAU;
+      x = side * lerp(1.22, 1.42, u) + Math.cos(th) * 0.15; y = lerp(1.62, 0.1, u); z = Math.sin(th) * 0.15;
+    }
+    o.x = x; o.y = y; o.z = z;
+    const scan = 2.9 - ((t - 7) * 0.62) % 4.6, beam = Math.exp(-(((y - scan) / 0.07) ** 2));
+    o.c = mix(C.holo, C.cream, beam * 0.6); o.s = 3.4 + 2 * beam; o.a = 0.3 + 0.55 * beam;
+  }
+  function tunnel(i, t, o) {
+    const ang = h(i, 2) * TAU, r = 0.35 + 2.4 * Math.sqrt(h(i, 3));
+    o.x = Math.cos(ang) * r; o.y = 0.25 + Math.sin(ang) * r; o.z = 2 - h(i, 4) * 26;
+    const u = h(i, 5);
+    o.c = mix(C.warp, C.pink, u); o.s = 3 + 3 * h(i, 6); o.a = 0.5 + 0.4 * u;
+  }
+  function stroma(i, t, o) {
+    const f = i % 64, u = h(i, 4);
+    o.x = -8 + u * 16 + Math.sin(t * 0.15 + f) * 0.2; o.y = -3.8 + (f % 13) * 0.62 + 0.28 * Math.sin(u * 6 + f);
+    o.z = -5 + Math.floor(f / 13) * 1.3 + 0.3 * Math.cos(u * 5 + f);
+    o.c = C.pink; o.s = 3; o.a = 0.16;
+  }
+  function tissueP(i, t, o) {
+    stroma(i, t, o);
+    if (i % 10 === 0) { o.a = 0; return; } // proteinler henüz yok
+  }
+  function secreteP(i, t, o) {
+    if (i % 10 === 0) { // protein
+      const k = i % TUMOR_N, S = tumorPos(k), tr = 42.5 + h(i, 5) * 5.6;
+      const E = [VX + (h(i, 6) - 0.5) * 0.3, (h(i, 7) - 0.5) * 1.3, 0.8];
+      const u = ss(tr, tr + 3, t), flow = [VX + (h(i, 6) - 0.5) * 1.5, (h(i, 7) - 0.5) * 1.5, vesselZ(h(i, 8), t, 2.4)];
+      const inV = ss(tr + 2.6, tr + 4, t);
+      const px = lerp(S[0], E[0], u), py = lerp(S[1], E[1], u) + Math.sin(u * Math.PI) * 1.3, pz = lerp(S[2], E[2], u);
+      o.x = lerp(px, flow[0], inV); o.y = lerp(py, flow[1], inV); o.z = lerp(pz, flow[2], inV);
+      o.c = mix(C.coral, C.gold, u); o.s = 7; o.a = t < tr ? 0 : 0.95; return;
+    }
+    if (i % 10 <= 3) { // damar duvarı
+      const ang = h(i, 2) * TAU, r = 1.3 + (h(i, 3) - 0.5) * 0.12;
+      o.x = VX + Math.cos(ang) * r; o.y = Math.sin(ang) * r; o.z = vesselZ(h(i, 4), t, 0.6);
+      o.c = C.blood; o.s = 4; o.a = 0.5 * ss(43.5, 46.5, t); return;
+    }
+    stroma(i, t, o); o.a *= 1 - ss(45.5, 48.5, t);
+  }
+  function testP(i, t, o) {
+    if (i % 10 === 0) {
+      const w = i % 8, W = WELLS[w], Lt = WELL_T(w), j = h(i, 9) * 0.5;
+      const u = ss(Lt - 1.5 + j, Lt + j * 0.4, t);
+      const sx = -9, sy = (h(i, 10) - 0.5) * 5, sz = (h(i, 11) - 0.5) * 3;
+      const ang = h(i, 12) * TAU + t * 1.4, rr = 0.52 + (h(i, 13) - 0.5) * 0.08;
+      o.x = lerp(sx, W[0] + Math.cos(ang) * rr, u); o.y = lerp(sy, W[1] + Math.sin(ang) * rr, u); o.z = lerp(sz, 0.05, u);
+      o.c = C.gold; o.s = 5.5; o.a = 0.9 * ss(0, 0.15, u); return;
+    }
+    stars(i, t, o); o.a *= 0.6;
+  }
+  function finalP(i, t, o) {
+    const p = TEXT[i % TEXT.length];
+    const jit = 0.02;
+    o.x = p[0] + (h(i, 14) - 0.5) * jit; o.y = p[1] + (h(i, 15) - 0.5) * jit; o.z = (h(i, 16) - 0.5) * 0.08;
+    o.c = i % 10 === 0 ? C.gold : mix(C.cream, C.coral, h(i, 17) * 0.5);
+    o.s = 3.6; o.a = 0.9 * (1 - ss(72.2, 74, t));
+  }
+  const SECTIONS = [
+    { s: 0, fn: stars }, { s: 7, fn: body, blend: 3 }, { s: 17, fn: tunnel, blend: 0.9 },
+    { s: 20.5, fn: tissueP }, { s: 42, fn: secreteP }, { s: 54, fn: testP }, { s: 64, fn: finalP, blend: 3.2 }
+  ];
+
+  // ---- Hücre sistemi (M): 0 hücre, 1 tümör hücresi, 2 alyuvar, 3 ELISA kuyusu ----
+  const M = 600;
+  function cell(c, t, o) {
+    o.k = 0; o.a = 0; o.s = 1; o.x = 0; o.y = -50; o.z = 0; o.c = C.pink;
+    const tissueOn = ss(20.5, 21.6, t) * (1 - ss(45, 47, t));
+    if (c < 140) {
+      const q = Math.floor(c / 14), f = fib(c % 14, 14), A = ACINI[q], fade = ss(33, 41, t + h(q, 63) * 2);
+      const shrink = 1 - 0.35 * fade;
+      o.x = A[0] + f[0] * 0.8 * shrink; o.y = A[1] + f[1] * 0.8 * shrink; o.z = A[2] + f[2] * 0.8 * shrink;
+      o.c = C.pink; o.s = 50 * (1 - 0.3 * fade); o.a = 0.9 * tissueOn * (1 - 0.92 * fade);
+    } else if (c < 200) {
+      const j = c - 140, x = -5.6 + Math.floor(j / 2) * 0.38;
+      o.x = x; o.y = ductY(x) + (j % 2 ? 0.16 : -0.16); o.z = j % 2 ? 0.18 : -0.18;
+      const tum = Math.abs(x) < 1.6 ? ss(31, 34, t) : 0;
+      o.k = tum > 0.5 ? 1 : 0; o.c = mix(C.pinkL, C.coral, tum); o.s = 40; o.a = 0.9 * tissueOn;
+    } else if (c < 200 + TUMOR_N) {
+      const k = c - 200, p = tumorPos(k), g = ss(TUMOR_T(k), TUMOR_T(k) + 0.5, t);
+      o.x = p[0]; o.y = p[1]; o.z = p[2]; o.k = 1; o.c = C.coral; o.s = 42 * g; o.a = 0.85 * g * (1 - ss(45, 47, t));
+    } else if (c < 580) {
+      const r = 0.95 * Math.sqrt(h(c, 8)), ang = h(c, 9) * TAU;
+      o.x = VX + Math.cos(ang) * r; o.y = Math.sin(ang) * r; o.z = vesselZ(h(c, 10), t, 2.4);
+      o.k = 2; o.c = C.rbc; o.s = 40; o.a = 0.95 * ss(44, 46.5, t) * (1 - ss(53.6, 54, t));
+    } else if (c < 588) {
+      const w = c - 580, W = WELLS[w], lit = ss(WELL_T(w), WELL_T(w) + 0.35, t);
+      o.x = W[0]; o.y = W[1]; o.z = W[2]; o.k = 3;
+      o.c = mix(C.dim, C.gold, lit); o.s = 150 + 18 * Math.exp(-(((t - WELL_T(w)) / 0.25) ** 2));
+      o.a = ss(54.2, 55, t) * (1 - ss(63.6, 64.6, t)) * (0.55 + 0.45 * lit);
+    }
+  }
+
+  // ---- Three.js ----
+  const canvas = document.getElementById('stage');
+  const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+  renderer.setClearColor(0x04070F, 1);
+  renderer.setPixelRatio(RENDER ? 1 : Math.min(2, window.devicePixelRatio || 1));
+  const scene = new THREE.Scene();
+  scene.fog = new THREE.FogExp2(0x04070F, 0.028);
+  const camera = new THREE.PerspectiveCamera(46, 1, 0.05, 200);
+
+  function makePoints(n, fs) {
+    const geo = new THREE.BufferGeometry();
+    const attrs = { position: 3, acolor: 3, asize: 1, aalpha: 1, akind: 1 }, arr = {};
+    for (const [k, d] of Object.entries(attrs)) { arr[k] = new Float32Array(n * d); geo.setAttribute(k, new THREE.BufferAttribute(arr[k], d)); }
+    const mat = new THREE.ShaderMaterial({
+      uniforms: { uPixel: { value: renderer.getPixelRatio() }, uScale: { value: 1 } },
+      vertexShader: `attribute vec3 acolor; attribute float asize; attribute float aalpha; attribute float akind;
+        uniform float uPixel; uniform float uScale; varying vec3 vC; varying float vA; varying float vK;
+        void main(){ vC = acolor; vA = aalpha; vK = akind; vec4 mv = modelViewMatrix * vec4(position, 1.0);
+          gl_PointSize = asize * uPixel * uScale * (10.0 / max(0.25, -mv.z)); gl_Position = projectionMatrix * mv; }`,
+      fragmentShader: fs, transparent: true, depthWrite: false,
+      blending: fs.includes('ADDITIVE') ? THREE.AdditiveBlending : THREE.NormalBlending
+    });
+    const pts = new THREE.Points(geo, mat); pts.frustumCulled = false; scene.add(pts);
+    return { pts, arr, geo, mat };
+  }
+  const glowFS = `// ADDITIVE
+    precision mediump float; varying vec3 vC; varying float vA; varying float vK;
+    void main(){ vec2 c = gl_PointCoord - vec2(0.5); float d = length(c); if (d > 0.5) discard;
+      float a = smoothstep(0.5, 0.0, d); a = a * a; gl_FragColor = vec4(vC * a * vA * 1.6, 1.0); }`;
+  const cellFS = `precision mediump float; varying vec3 vC; varying float vA; varying float vK;
+    void main(){ vec2 p = gl_PointCoord * 2.0 - 1.0; float r = length(p); if (r > 1.0) discard;
+      vec3 col; float a;
+      if (vK < 1.5) {
+        float tum = step(0.5, vK);
+        float cyto = smoothstep(1.0, 0.86, r);
+        float mem = smoothstep(0.1, 0.0, abs(r - 0.88));
+        float nr = mix(0.36, 0.5, tum);
+        float nuc = smoothstep(nr, nr - 0.08, length(p - vec2(0.14, -0.1)));
+        vec3 nucC = mix(vec3(0.29, 0.16, 0.48), vec3(0.22, 0.08, 0.30), tum);
+        col = mix(vC * 0.72, nucC, nuc); col += mem * vC * 0.35 + tum * vC * 0.12;
+        a = max(cyto * 0.62, max(mem * 0.95, nuc * 0.95));
+      } else if (vK < 2.5) {
+        float disc = smoothstep(1.0, 0.8, r);
+        col = vC * mix(0.55, 1.08, smoothstep(0.15, 0.72, r)); a = disc * 0.95;
+      } else {
+        float ring = smoothstep(0.07, 0.0, abs(r - 0.84));
+        float fill = smoothstep(0.84, 0.0, r);
+        col = vC * (ring * 1.4 + fill * 0.9); a = max(ring, fill * 0.55);
+      }
+      gl_FragColor = vec4(col, a * vA); }`;
+  const cellsSys = makePoints(M, cellFS);
+  const partSys = makePoints(N, glowFS);
+
+  const composer = new THREE.EffectComposer(renderer);
+  composer.addPass(new THREE.RenderPass(scene, camera));
+  const bloom = new THREE.UnrealBloomPass(new THREE.Vector2(1920, 1080), 1.05, 0.55, 0.12);
+  composer.addPass(bloom);
+
+  function resize() {
+    const w = RENDER ? 1920 : window.innerWidth, hh = RENDER ? 1080 : window.innerHeight;
+    renderer.setSize(w, hh, false); composer.setSize(w, hh); camera.aspect = w / hh; camera.updateProjectionMatrix();
+    const s = Math.min(1.4, Math.max(0.55, hh / 1080)); partSys.mat.uniforms.uScale.value = s; cellsSys.mat.uniforms.uScale.value = s;
+  }
+  window.addEventListener('resize', resize);
+
+  const caps = [...document.querySelectorAll('.cap')].map(el => ({ el, r: el.dataset.t.split(',').map(Number) }));
+  const tags = PROTEINS.map(name => { const d = document.createElement('div'); d.className = 'tag'; d.textContent = name; document.body.appendChild(d); return d; });
+  const flash = document.getElementById('flash');
+  const o = { x: 0, y: 0, z: 0, c: C.dim, s: 1, a: 0, k: 0 };
+  const q = { x: 0, y: 0, z: 0, c: C.dim, s: 1, a: 0 };
+  const v3 = new THREE.Vector3();
+
+  function renderAt(t) {
+    // Parçacıklar: bölüm fonksiyonu, gerekirse önceki bölümle yumuşak geçiş
+    let si = 0; for (let k = 0; k < SECTIONS.length; k++) if (t >= SECTIONS[k].s) si = k;
+    const S = SECTIONS[si], P = si > 0 ? SECTIONS[si - 1] : null;
+    const w = S.blend && P ? ss(S.s, S.s + S.blend, t) : 1;
+    const A = partSys.arr;
+    for (let i = 0; i < N; i++) {
+      S.fn(i, t, o);
+      if (w < 1) { P.fn(i, t, q); o.x = lerp(q.x, o.x, w); o.y = lerp(q.y, o.y, w); o.z = lerp(q.z, o.z, w); o.c = mix(q.c, o.c, w); o.s = lerp(q.s, o.s, w); o.a = lerp(q.a, o.a, w); }
+      const j = i * 3;
+      A.position[j] = o.x; A.position[j + 1] = o.y; A.position[j + 2] = o.z;
+      A.acolor[j] = o.c[0]; A.acolor[j + 1] = o.c[1]; A.acolor[j + 2] = o.c[2]; A.asize[i] = o.s; A.aalpha[i] = o.a;
+    }
+    const B = cellsSys.arr;
+    for (let c = 0; c < M; c++) {
+      cell(c, t, o); const j = c * 3;
+      B.position[j] = o.x; B.position[j + 1] = o.y; B.position[j + 2] = o.z;
+      B.acolor[j] = o.c[0]; B.acolor[j + 1] = o.c[1]; B.acolor[j + 2] = o.c[2]; B.asize[c] = o.s; B.aalpha[c] = o.a; B.akind[c] = o.k;
+    }
+    for (const sys of [partSys, cellsSys]) for (const k of ['position', 'acolor', 'asize', 'aalpha', 'akind']) sys.geo.attributes[k].needsUpdate = true;
+
+    const [cp, cl] = camAt(t);
+    camera.position.set(cp[0], cp[1], cp[2]); camera.lookAt(cl[0], cl[1], cl[2]);
+    scene.fog.density = t > 20.5 && t < 54 ? 0.045 : 0.02;
+    const inside = t > 20.8 && t < 53.9;
+    bloom.threshold = inside ? 0.5 : 0.12;
+    bloom.strength = (inside ? 0.45 : 0.95) + 0.6 * Math.exp(-(((t - 20.4) / 0.4) ** 2)) + 0.5 * Math.exp(-(((t - 64.6) / 0.6) ** 2)) + (t > 17 && t < 20.5 ? 0.4 : 0);
+    composer.render();
+
+    const fl = 0.95 * Math.exp(-(((t - 20.4) / 0.16) ** 2)) + 0.7 * Math.exp(-(((t - 54.0) / 0.14) ** 2));
+    flash.style.opacity = fl.toFixed(3);
+    for (const { el, r } of caps) el.style.opacity = (ss(r[0], r[0] + 0.8, t) * (1 - ss(r[1] - 0.8, r[1], t))).toFixed(3);
+    const W = canvas.clientWidth, H = canvas.clientHeight;
+    tags.forEach((d, k) => {
+      const lit = ss(WELL_T(k), WELL_T(k) + 0.4, t) * (1 - ss(63.6, 64.6, t));
+      v3.set(WELLS[k][0], WELLS[k][1] - 0.78, 0).project(camera);
+      d.style.left = `${(v3.x * 0.5 + 0.5) * W}px`; d.style.top = `${(-v3.y * 0.5 + 0.5) * H}px`; d.style.opacity = lit.toFixed(3);
+    });
+  }
+
+  const ready = (document.fonts ? document.fonts.ready : Promise.resolve()).then(() => { buildText(); resize(); renderAt(0); });
+  if (RENDER) {
+    window.__film = { fps: 30, total: TOTAL, cues: CUES, seek: t => renderAt(t), ready: false };
+    ready.then(() => { window.__film.ready = true; });
+  } else {
+    let t0 = null, playing = true;
+    const loop = now => {
+      if (t0 === null) t0 = now;
+      let t = (now - t0) / 1000;
+      if (t >= TOTAL) { t = TOTAL - 0.001; playing = false; }
+      renderAt(t);
+      if (playing) requestAnimationFrame(loop);
+    };
+    ready.then(() => requestAnimationFrame(loop));
+    document.getElementById('replay').addEventListener('click', () => { t0 = null; if (!playing) { playing = true; requestAnimationFrame(loop); } });
+  }
+})();
+</script>
