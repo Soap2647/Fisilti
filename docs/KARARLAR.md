@@ -254,3 +254,32 @@ kurulabileceğini destekler; bu da klinik maliyet ve uygulanabilirlik açısınd
 avantajdır. MIL'in katkısı yorumlanabilirliktir (örnek başına omik dikkati).
 Genel ilke: eksik görünümlerin deseni etiketle ilişkiliyse füzyon modelleri
 yalnızca tam örneklerde ya da desenden bağımsız bir tasarımla değerlendirilmelidir.
+
+## K-015 — WP4 yorumlanabilirlik: dış katman SHAP ve yolak analizi
+*2026-09-30 · WP4*
+
+**SHAP:** Her omikte XGBoost (blood senaryosu) WP3'ün 1. tekrarındaki 5 dış
+katmanda yeniden eğitildi; SHAP değerleri yalnızca test örneklerinde, XGBoost'un
+yerleşik kesin TreeSHAP'ı ile (`pred_contribs`) hesaplandı. En etkili özellikler
+kararlılık seçimiyle büyük ölçüde örtüşür (miRNA: miR-135b, miR-21, miR-203a,
+miR-196a; protein: SERPINB5, SULF1, SDCBP2, SAMD9; metilasyon: CCNA1, HOXD10,
+TFPI2). Not: en etkili özelliklerin tamamının "yüksek değer → PDAC" yönünde
+olması **bulgu değildir**; 'up' yön filtresinin doğal sonucudur.
+
+**GSEA (tüm genler, Welch t sıralaması):** Tümörde EMT (protein NES 3,27),
+interferon yanıtları, koagülasyon (2,80), KRAS sinyali (2,23), E2F/G2-M
+proliferasyon programları (mRNA) aktif; oksidatif fosforilasyon (protein) ve
+pankreas beta hücre programı baskılanmış — PDAC biyolojisiyle tutarlı.
+
+**ORA (arka plan = test edilen tüm genler):** Protein adayları (sel_freq ≥ 0,5,
+n = 39) p53 sinyal yolağı (FDR 0,002) ve ECM-reseptör etkileşiminde zenginleşir.
+
+**Sınırlılıklar:**
+- Myc hedefleri ve oksidatif fosforilasyon mRNA'da pozitif, proteinde negatif
+  NES gösterir; asiner doku (yüksek protein sentezi/mitokondri) bileşim farkının
+  protein düzeyine yansıması olası açıklamadır (K-007, K-012).
+- miRNA hedef zenginleştirmesi (miRTarBase 2017; ≥2 aday miRNA hedefi) keşif
+  amaçlıdır: veritabanı kanser çalışmalarına yanlı olduğundan "Pathways in
+  cancer" gibi genel terimlerin zenginleşmesi beklenen bir yanlılıktır.
+- Gen seti kütüphaneleri erişim tarihiyle birlikte data/raw/genesets/ altında
+  saklanır.
