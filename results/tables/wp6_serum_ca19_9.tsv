@@ -1,0 +1,11 @@
+	value
+n_pdac	88.0
+n_healthy	19.0
+ca19_9_sens	0.7386
+ca19_9_spec	1.0
+panel_sens_at_ca19_9_spec	0.1591
+panel_auc	0.5365
+n_ca19_9_negative_pdac	23.0
+panel_pos_in_ca19_9_negative_pdac_at_spec95	0.1739
+combined_sens	0.7841
+combined_spec	0.9474

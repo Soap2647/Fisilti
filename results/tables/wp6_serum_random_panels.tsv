@@ -1,0 +1,3 @@
+cohort	panel_auc	random_median	random_p95	pool_size	empirical_p
+GSE85589	0.5365	0.5182	0.6866	880	0.4326
+GSE59856	0.3964	0.4979	0.7372	880	0.7093

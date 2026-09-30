@@ -361,3 +361,28 @@ serum kohortunda kilitli panel v2 ile PDAC vs sağlıklı AUC. İkincil sonlanı
 (erken/ameliyat edilebilir/geç evre, benign, diğer kanserler, %90/%95 özgüllükte
 duyarlılık, CA19-9 kıyası, rastgele panel kontrolü, DCA) önceden
 listelenmiştir. Plan dışı analizler raporda "keşif amaçlı" olarak ayrıca etiketlenir.
+
+## K-019 — Ön-kayıtlı serum doğrulamasının sonucu: kilitli miRNA paneli başarısız
+*2026-09-30 · WP6*
+
+**Sonuç (değiştirilmeden raporlanır):**
+- Birincil sonlanım, PDAC vs sağlıklı AUC: GSE85589 **0,536** (%95 GA
+  0,405–0,666); GSE59856 **0,396** (0,324–0,470). %95 özgüllükte duyarlılık
+  %16 ve %7.
+- Rastgele 5'li panel kontrolü (serumda ölçülebilir 880 miRNA havuzu):
+  ampirik p = 0,43 ve 0,71 → panel şanstan iyi değil.
+- Erken evre PDAC vs sağlıklı (GSE59856, n = 19): 0,433. Ameliyat edilebilir: 0,427.
+- CA19-9 (GSE85589): duyarlılık %74, özgüllük %100; panel aynı özgüllükte %16.
+  CA19-9 negatif 23 PDAC'ın %17'si panelle %95 özgüllük eşiğinde pozitif.
+- Tek miRNA düzeyinde miR-24-3p GSE59856'da ters yönde (AUC 0,22).
+
+**Yorum:** Dokuda tümörde artan ve serumda ölçülebilen miRNA'lar serumda
+PDAC'ı ayırt etmedi. Doku sinyalinin kana doğrudan aktarılabileceği varsayımı
+bu veride desteklenmedi. Olası nedenler (sonraki keşif analizleriyle sınanacak):
+(1) dolaşımdaki miRNA havuzuna kan hücreleri ve diğer dokuların katkısının tümör
+katkısını baskılaması; (2) serum miRNA düzeylerinin tümör dışı (sistemik,
+inflamatuvar) süreçlerden etkilenmesi; (3) platform ve ön-analitik farklılıklar.
+
+**Durum:** Bu sonuç projenin temel varsayımlarından birini çürütür ve
+raporda birincil bulgu olarak sunulacaktır. Bundan sonraki analizler
+**keşif amaçlıdır** ve ön-kayıtlı sonucu değiştirmez.

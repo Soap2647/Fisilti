@@ -1,0 +1,10 @@
+cohort	comparison	n_pos	n_neg	auc	ci_lo	ci_hi	sens_at_spec90	sens_at_spec95
+GSE85589	P1_PDAC_vs_saglikli	88	19	0.5365	0.4049	0.6657	0.1818	0.1591
+GSE85589	S4_PDAC_vs_benign	88	10	0.4125	0.2705	0.5625		
+GSE85589	S5_PDAC_vs_diger_kanser	88	115	0.5504	0.47	0.6272		
+GSE59856	P1_PDAC_vs_saglikli	100	150	0.3964	0.3236	0.4699	0.11	0.07
+GSE59856	S4_PDAC_vs_benign	100	21	0.5319	0.4071	0.6562		
+GSE59856	S5_PDAC_vs_diger_kanser	100	300	0.6103	0.5469	0.6772		
+GSE59856	S1_erken_PDAC_vs_saglikli	19	150	0.433	0.3049	0.5751		
+GSE59856	S3_gec_PDAC_vs_saglikli	81	150	0.3878	0.3088	0.4658		
+GSE59856	S2_ameliyat_edilebilir_PDAC_vs_saglikli	21	150	0.427	0.3038	0.5565		

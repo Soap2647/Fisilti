@@ -113,7 +113,7 @@ def random_panels(z: pd.DataFrame, l: pd.DataFrame, pool: list[str], k: int, rng
     aucs = np.empty(N_RANDOM)
     for i in range(N_RANDOM):
         idx = rng.choice(len(pool), k, replace=False)
-        aucs[i] = roc_auc_score(y, zz[idx].mean(axis=0))
+        aucs[i] = roc_auc_score(y, np.nanmean(zz[idx], axis=0))  # panel_score ile aynı kural (NaN atlanır)
     return aucs
 
 
