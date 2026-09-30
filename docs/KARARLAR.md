@@ -283,3 +283,35 @@ n = 39) p53 sinyal yolağı (FDR 0,002) ve ECM-reseptör etkileşiminde zenginle
   cancer" gibi genel terimlerin zenginleşmesi beklenen bir yanlılıktır.
 - Gen seti kütüphaneleri erişim tarihiyle birlikte data/raw/genesets/ altında
   saklanır.
+
+## K-016 — miRNA panelinin serum etiketlerine bakılmadan kilitlenmesi
+*2026-09-30 · WP5*
+
+**İlke:** Panel üyeleri ve skorlama kuralı yalnızca doku verisinden ve
+*etiketsiz* serum ölçülebilirlik kontrolünden türetilir; serum kohortlarının
+PDAC/kontrol etiketleri panel kilitlenene kadar hiçbir adımda kullanılmaz.
+Kilit dosyası (`results/panel/mirna_panel_v1.json`) doğrulamadan önce ayrı bir
+commit ile git'e işlenir; commit zaman damgası ön-kayıt kanıtıdır.
+
+**Filtre hunisi:** 40 doku adayı (sel_freq ≥ 0,5) → asiner güvenliği (ρ < 0,3)
+40 → kan hücresi/hemoliz kökenli miRNA dışlaması 40 → serumda ölçülebilirlik
+(GSE59856 örneklerinin ≥ %50'sinde 3D-Gene tespit sınırı 2,612 üzerinde +
+GSE85589 platformunda bulunma) **15** → fazlalık giderme (dokuda |ρ| > 0,7;
+miR-221-3p ve miR-210-5p → miR-210-3p, miR-1247-5p → miR-1247-3p) 12 →
+panel boyutu 5 (doku grup-CV AUC eğrisi: 1→0,923, 3→0,970, 5→0,978 tepe; 10→0,974).
+
+**Kilitli panel v1:** miR-21-5p, miR-210-3p, miR-27a-3p, miR-935, miR-24-3p
+(hepsi tümörde artan yönde).
+
+**Skorlama kuralı (kilitli):** Panel miRNA'larının kohort-içi z-skor ortalaması
+(z-skor parametreleri etiketsiz, tüm örneklerden). Serumda ağırlık öğrenilmez.
+
+**Gözlem:** Dokuda en güçlü adayların (miR-135b, miR-196a, miR-203a) serumda
+çoğunlukla tespit sınırı altında kalması, "dokuda iyi = kanda ölçülebilir"
+varsayımının geçersiz olabileceğini gösterir; ölçülebilirlik filtresi bu
+nedenle zorunludur.
+
+**Sınırlılık:** Skorlama kuralının kohort-içi z-skor kullanması, skorun
+kohortun vaka karışımına (PDAC/kontrol oranı) bağlı olmasına yol açar; klinik
+uygulamada sabit referans aralıkları (ör. sağlıklı referans popülasyonu
+dağılımı) gerekecektir.

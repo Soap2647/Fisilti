@@ -1,0 +1,71 @@
+{
+  "panel": "Fısıltı miRNA paneli v1",
+  "locked_utc": "2026-09-30T15:19:55+00:00",
+  "code_commit_at_lock": "47e5b486f801d44489b97c8a17ac5cc2e4db4c34",
+  "members": [
+    {
+      "mimat": "MIMAT0000076",
+      "name": "hsa-miR-21-5p",
+      "direction": "up"
+    },
+    {
+      "mimat": "MIMAT0000267",
+      "name": "hsa-miR-210-3p",
+      "direction": "up"
+    },
+    {
+      "mimat": "MIMAT0000084",
+      "name": "hsa-miR-27a-3p",
+      "direction": "up"
+    },
+    {
+      "mimat": "MIMAT0004978",
+      "name": "hsa-miR-935",
+      "direction": "up"
+    },
+    {
+      "mimat": "MIMAT0000080",
+      "name": "hsa-miR-24-3p",
+      "direction": "up"
+    }
+  ],
+  "scoring_rule": "kohort-içi z-skor (tüm örnekler, etiketsiz) ortalaması; yüksek skor = PDAC",
+  "selection_used_serum_labels": false,
+  "criteria": {
+    "sel_freq_min": 0.5,
+    "rho_acinar_max": 0.3,
+    "serum_detect_frac_min_GSE59856": 0.5,
+    "floor_GSE59856": 2.612,
+    "redundancy_abs_spearman": 0.7,
+    "size_range": [
+      5,
+      10
+    ],
+    "blood_cell_exclusion": [
+      "hsa-miR-126-3p",
+      "hsa-miR-142-3p",
+      "hsa-miR-142-5p",
+      "hsa-miR-144-3p",
+      "hsa-miR-144-5p",
+      "hsa-miR-150-5p",
+      "hsa-miR-15b-5p",
+      "hsa-miR-16-5p",
+      "hsa-miR-223-3p",
+      "hsa-miR-451a",
+      "hsa-miR-486-5p",
+      "hsa-miR-92a-3p"
+    ]
+  },
+  "tissue_cv_auc_curve": {
+    "1": 0.9233,
+    "2": 0.9598,
+    "3": 0.9699,
+    "4": 0.975,
+    "5": 0.9778,
+    "6": 0.9752,
+    "7": 0.9753,
+    "8": 0.9729,
+    "9": 0.9707,
+    "10": 0.9744
+  }
+}
