@@ -432,3 +432,22 @@ panel" olarak kalır; ilgili veri sahiplerine başvuru ve prospektif doğrulama
 bağımsız üç GEO doku kohortunda mRNA düzeyinde sınanır. Plan
 `scripts/wp6_03_tissue_external.py` başlığındadır ve çalıştırılmadan önce commit
 edilmiştir. Bu doğrulama doku düzeyindedir; kan testi performansı iddiası taşımaz.
+
+## K-022 — Doku dış doğrulamasının sonucu: protein aday paneli bağımsız kohortlarda doğrulandı
+*2026-09-30 · WP6 (ön-kayıtlı, K-021)*
+
+**Birincil sonlanım (T1, PDAC vs normal doku, mRNA düzeyi, kilitli skor):**
+GSE15471 AUC **0,922** (%95 GA 0,850–0,974); GSE62452 **0,873** (0,808–0,931);
+GSE16515 **0,953** (0,891–0,995). Rastgele 8'li gen panellerine karşı ampirik
+p = 0,004 / 0,001 / 0,001 (rastgele medyan AUC 0,41–0,48).
+**İkincil:** Erken evre (I–II) PDAC vs normal (GSE62452, n = 49) AUC **0,858**
+(0,782–0,924); geç evre 0,923. Tek gen düzeyinde 24/24 gen-kohort çifti
+beklenen yönde (AUC > 0,5); en zayıf üye THBS1 (0,585–0,833).
+
+**Yorum:** CPTAC protein verisinden türetilen ve kilitlenen panel, farklı
+ülkelerden, farklı mikroarray platformlarıyla ölçülmüş üç bağımsız doku
+kohortunda mRNA düzeyinde de tümörü normal dokudan güçlü biçimde ayırır; sinyal
+erken evrede korunur. Bu, keşfin aşırı uyum (overfitting) ürünü olmadığını ve
+omik katmanları (protein → mRNA) ile kohortlar arasında taşındığını gösterir.
+**Sınır:** Doku düzeyindedir; plazmada ölçülebilirlik ve kan testi performansı
+ayrıca doğrulanmalıdır (K-017, K-021).

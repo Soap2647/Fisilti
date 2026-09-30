@@ -38,8 +38,8 @@ Başvuru dosyasından sapmalar ve yöntemsel kararlar: [docs/KARARLAR.md](docs/K
 | WP2 | MOFA+ çoklu-omik entegrasyon | ✅ |
 | WP3 | Attention-MIL + XGBoost/LightGBM, özellik seçimi | ✅ |
 | WP4 | SHAP, pathway zenginleştirme | ✅ |
-| WP5 | Sekresyon/plazma filtresi, panel tasarımı | ⏳ |
-| WP6 | Kohortlar arası doğrulama, CA19-9 kıyası, DCA | ⏳ |
+| WP5 | Sekresyon/plazma filtresi, panel tasarımı | ✅ |
+| WP6 | Kohortlar arası doğrulama, CA19-9 kıyası, DCA | ✅ |
 | WP7 | Paketleme (Docker, Nextflow), rapor, poster | ⏳ |
 
 ## Kurulum

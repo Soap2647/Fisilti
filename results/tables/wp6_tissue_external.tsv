@@ -1,0 +1,6 @@
+cohort	comparison	n_pos	n_neg	genes_on_platform	auc	ci_lo	ci_hi	random_median	random_p95	empirical_p
+GSE15471	T1_PDAC_vs_normal	36	36	8/8	0.9221	0.8495	0.9738	0.4105	0.8125	0.004
+GSE62452	T1_PDAC_vs_normal	69	61	8/8	0.8734	0.8085	0.9311	0.4812	0.7197	0.001
+GSE62452	T2_erken_PDAC_vs_normal	49	61	8/8	0.8578	0.7822	0.9241			
+GSE62452	T3_gec_PDAC_vs_normal	19	61	8/8	0.9232	0.8447	0.9827			
+GSE16515	T1_PDAC_vs_normal	36	16	8/8	0.9531	0.8906	0.9948	0.4306	0.7796	0.001
