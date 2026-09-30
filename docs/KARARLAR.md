@@ -351,3 +351,13 @@ tekrarlanabilir, lisans gerektirmez; HPA sınıfı klasik dışı salgılanmayı
   ölçüm **plazmada** yapılmalıdır (serum değerleri trombosit aktivasyonunu yansıtır).
 - Hiçbir adayda HPA immünoanaliz (IM) kan ölçümü bulunmadı; ELISA
   uygulanabilirliği ticari kit/antikor taramasıyla ayrıca teyit edilmelidir.
+
+## K-018 — Serum doğrulaması için ön-kayıtlı analiz planı
+*2026-09-30 · WP6*
+
+Analiz planı (`scripts/wp6_01_serum_validation.py` başlığı) sonuçlar
+görülmeden önce ayrı bir commit ile kaydedilmiştir. Birincil sonlanım: her iki
+serum kohortunda kilitli panel v2 ile PDAC vs sağlıklı AUC. İkincil sonlanımlar
+(erken/ameliyat edilebilir/geç evre, benign, diğer kanserler, %90/%95 özgüllükte
+duyarlılık, CA19-9 kıyası, rastgele panel kontrolü, DCA) önceden
+listelenmiştir. Plan dışı analizler raporda "keşif amaçlı" olarak ayrıca etiketlenir.
