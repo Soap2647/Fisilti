@@ -144,3 +144,61 @@ miR-196a-5p ↑ (p = 1×10⁻¹³), miR-210-3p ↑ (p = 2×10⁻¹⁴), miR-375-
 **Ek kazanım:** Olgun miRNA düzeyinde MIMAT erişim numarası anahtar olarak
 kullanıldı; doku (CPTAC, TCGA) ve serum (GSE85589, GSE59856) kohortları miRBase
 ad değişikliklerinden bağımsız olarak eşleştirilebilir.
+
+## K-011 — MOFA+ tasarımı: denetimsiz keşif, CV içinde yeniden eğitim
+*2026-09-30 · WP2, WP3*
+
+**Karar:**
+- MOFA+ yalnızca CPTAC-PDAC'ta (eşleşmiş çoklu-omik tek kohort) eğitilir; tek
+  grup (tümör + normal birlikte), 4 görünüm, en fazla 15 faktör, ARD + spike-and-slab
+  ağırlık önselleri, %0,5'ten az varyans açıklayan faktörler budanır.
+  Yakınsama: 'medium' ölçütü, en fazla 1000 iterasyon ('slow' + 3000 iterasyon bu
+  veride >65 dk sürüyordu; 'medium' 716. iterasyonda yakınsadı).
+- Özellik ön seçimi yalnızca varyansa göredir (mRNA 3000, protein 2000,
+  metilasyon 3000, miRNA 500); sınıf etiketi kullanılmaz. Metilasyon beta
+  değerleri M değerine dönüştürülür (Gauss olabilirliği için).
+- Ölçülmemiş görünümler eksik veri olarak modele verilir (MOFA+ bunu
+  olasılıksal olarak ele alır); örnek atılmaz.
+- Faktörlerin klinik anlamı (tümör/normal, erken/geç evre, doku bileşimi)
+  model kurulduktan sonra, BH-FDR düzeltmeli testlerle değerlendirilir.
+- WP3'te MOFA faktörleri sınıflandırıcı girdisi olarak kullanılırsa MOFA+
+  çapraz doğrulamanın her eğitim katmanında yeniden eğitilir; test örnekleri
+  eğitilmiş ağırlıklarla faktör uzayına yansıtılır.
+
+**Gerekçe:** Denetimsiz faktör analizi etiket sızıntısı yaratmaz ve biyolojik
+yorumu kolaylaştırır. Etiketle ilişkilendirilmiş faktör/özellik *seçimi* ise
+denetimli bir adımdır ve yalnızca eğitim verisinde yapılmalıdır (K-003).
+
+## K-012 — MOFA+ bulguları: baskın tümör/normal ekseni doku bileşimidir
+*2026-09-30 · WP2 → WP3, WP5*
+
+**Model:** 13 aktif faktör; açıklanan toplam varyans mRNA %48, protein %56,
+miRNA %59, metilasyon %70. Kendi R² hesabımız MOFA+'ın iç hesabıyla birebir
+örtüşür (en büyük fark 0,000 puan).
+
+**Bulgular:**
+1. **F1** tümör/normali neredeyse kusursuz ayırır (AUC 0,988; yalnızca 4 omiği
+   tam örneklerde 0,983; her omik alt kümesinde >0,98 → eksik görünüm deseninden
+   kaynaklanan yapay bir sinyal değildir). Ancak en yüksek ağırlıklı proteinler
+   asiner sindirim enzimleridir (PLA2G1B, CPA2, PNLIP, AMY2A/B, PRSS3, SYCN).
+2. **F2** aynı asiner programın mRNA/miRNA yüzüdür (CPA1, CELA3A/B, CTRB1/2;
+   miR-216a/b, miR-217, miR-802) ve tümörlerde asiner fraksiyonla güçlü
+   korelasyon gösterir (Spearman ρ = 0,70).
+3. **Hiçbir faktör erken ve geç evreyi ayırmaz** (en iyi AUC 0,59; tüm q > 0,2).
+4. Doku bileşimiyle ilişkili diğer faktörler: F5 ↔ neoplastik hücre oranı
+   (ρ = 0,45), F9 ↔ stromal oran (ρ = −0,41).
+
+**Yorum ve karar:**
+- Dokuda tümörü normalden ayıran en büyük sinyal, tümörün asiner (enzim üreten)
+  dokuyu ortadan kaldırmasıdır. Bu, K-007'de öngörülen karıştırıcıyı gerçek
+  veride doğrular. Asiner enzim kaybı **kan testi için uygun değildir**:
+  kanda "azalan" doku sinyali güvenilir ölçülemez; üstelik pankreatitte bu
+  enzimler kanda artar ve yanlış pozitife yol açar.
+- **WP3/WP5'e yansıması:** Asiner program genleri/miRNA'ları (F1/F2 yüksek
+  ağırlıklı özellikler ve asiner fraksiyonla |ρ| > 0,5 korelasyon gösteren
+  özellikler) aday panelden dışlanır ya da ayrıca işaretlenir; tümörde **artan**
+  ve salgılanan adaylar önceliklendirilir.
+- Evre ekseni bulunmaması, erken evre tümörlerin tümör sinyalini zaten tam
+  taşıdığını düşündürür: PDAC-normal ayrımı için geliştirilen bir panelin erken
+  evrede de çalışması beklenir. Bu, WP6'da erken/geç evre duyarlılığı ayrı
+  raporlanarak sınanacaktır.

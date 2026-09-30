@@ -60,9 +60,27 @@ def omic_matrix(omic: str, patients: pd.Index | None = None) -> pd.DataFrame:
 def clinical() -> pd.DataFrame:
     c = _read("clinical")
     c.index.name = "patient"
+    for col in FRACTIONS:
+        if col in c.columns:
+            c[col] = c[col].map(_mean_of_pieces)
     c["stage"] = c["tumor_stage_pathological"].map(_stage_norm)
     c["early"] = c["stage"].map(lambda s: np.nan if not isinstance(s, str) else float(s in EARLY))
     return c
+
+
+FRACTIONS = ["Neoplastic_cellularity", "Acinar_fraction", "Islet_fraction", "Stromal_fraction",
+             "Non_neoplastic_duct", "Inflammation_fraction", "Fat_fraction", "Muscle_fraction"]
+
+
+def _mean_of_pieces(v) -> float:
+    """'15;5;20' gibi çok parçalı patoloji değerlendirmesini ortalamaya çevirir.
+
+    CPTAC'ta bir tümörden birden fazla doku parçası incelenmiş olabilir.
+    """
+    if pd.isna(v):
+        return np.nan
+    vals = pd.to_numeric(pd.Series(str(v).split(";")), errors="coerce").dropna()
+    return float(vals.mean()) if len(vals) else np.nan
 
 
 def sample_labels(samples: list[str], clin: pd.DataFrame) -> pd.DataFrame:

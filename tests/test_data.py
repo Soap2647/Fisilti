@@ -101,6 +101,15 @@ def test_primary_diagnosis_skips_metastasis_record():
     assert _primary_diagnosis([]) == {}
 
 
+def test_mean_of_pieces():
+    from fisilti.data.cptac import _mean_of_pieces
+
+    assert _mean_of_pieces("15;5;20") == pytest.approx(40 / 3)
+    assert _mean_of_pieces("40") == 40.0
+    assert np.isnan(_mean_of_pieces(np.nan))
+    assert np.isnan(_mean_of_pieces("NA"))
+
+
 def test_cptac_labels_mask_tumor_only_fields_for_normals():
     clin = pd.DataFrame(
         {"stage": ["IIB"], "early": [1.0], "age": [60], "sex": ["Male"], "histology_diagnosis": ["PDAC"],

@@ -24,3 +24,7 @@ desktop.ini
 # Paket derleme
 *.egg-info/
 
+
+# Çalýþtýrma günlükleri
+results/*.log
+
