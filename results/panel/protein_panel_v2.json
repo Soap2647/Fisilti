@@ -1,0 +1,92 @@
+{
+  "panel": "Fısıltı protein aday paneli v2 (plazma ELISA; kanda doğrulanmamış)",
+  "locked_utc": "2026-09-30T15:26:01+00:00",
+  "code_commit_at_lock": "fca9e9b044cd73afd93d02c983ef00689d35ac8f",
+  "members": [
+    {
+      "gene": "SULF1",
+      "uniprot": "Q8IWU6",
+      "tier": "1",
+      "direction": "up",
+      "hpa_secretome": "Secreted in other tissues",
+      "blood_ms_pg_per_L": 14000.0,
+      "blood_im_pg_per_L": null
+    },
+    {
+      "gene": "LGALS3BP",
+      "uniprot": "Q08380",
+      "tier": "1",
+      "direction": "up",
+      "hpa_secretome": "Secreted to blood",
+      "blood_ms_pg_per_L": 2700000000.0,
+      "blood_im_pg_per_L": null
+    },
+    {
+      "gene": "NMI",
+      "uniprot": "Q13287",
+      "tier": "1",
+      "direction": "up",
+      "hpa_secretome": "Secreted to blood",
+      "blood_ms_pg_per_L": 16000.0,
+      "blood_im_pg_per_L": null
+    },
+    {
+      "gene": "LAMC2",
+      "uniprot": "Q13753",
+      "tier": "1",
+      "direction": "up",
+      "hpa_secretome": "Secreted to extracellular matrix",
+      "blood_ms_pg_per_L": 27000.0,
+      "blood_im_pg_per_L": null
+    },
+    {
+      "gene": "THBS1",
+      "uniprot": "P07996",
+      "tier": "1",
+      "direction": "up",
+      "hpa_secretome": "Secreted to extracellular matrix",
+      "blood_ms_pg_per_L": 5200000000.0,
+      "blood_im_pg_per_L": null
+    },
+    {
+      "gene": "CD55",
+      "uniprot": "P08174",
+      "tier": "1",
+      "direction": "up",
+      "hpa_secretome": "Secreted to blood",
+      "blood_ms_pg_per_L": 16000000.0,
+      "blood_im_pg_per_L": null
+    },
+    {
+      "gene": "GLA",
+      "uniprot": "Q9UHE5",
+      "tier": "2",
+      "direction": "up",
+      "hpa_secretome": "Intracellular and membrane",
+      "blood_ms_pg_per_L": 1200000.0,
+      "blood_im_pg_per_L": null
+    },
+    {
+      "gene": "SERPINB5",
+      "uniprot": "P36952",
+      "tier": "2",
+      "direction": "up",
+      "hpa_secretome": "Intracellular and membrane",
+      "blood_ms_pg_per_L": 310000.0,
+      "blood_im_pg_per_L": null
+    }
+  ],
+  "blood_validation": "yok — elimizde plazma proteomik kohortu bulunmuyor (K-017)",
+  "tissue_cv_auc_curve": {
+    "1": 0.963,
+    "2": 0.9825,
+    "3": 0.9868,
+    "4": 0.9898,
+    "5": 0.9893,
+    "6": 0.9876,
+    "7": 0.9894,
+    "8": 0.9924,
+    "9": 0.9946,
+    "10": 0.9946
+  }
+}

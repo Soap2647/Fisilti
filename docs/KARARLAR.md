@@ -315,3 +315,39 @@ nedenle zorunludur.
 kohortun vaka karışımına (PDAC/kontrol oranı) bağlı olmasına yol açar; klinik
 uygulamada sabit referans aralıkları (ör. sağlıklı referans popülasyonu
 dağılımı) gerekecektir.
+
+## K-017 — Fazlalık giderme hatası ve panellerin v2 olarak yeniden kilitlenmesi; protein aday paneli
+*2026-09-30 · WP5*
+
+**Hata:** Panel fazlalık giderme adımında Spearman korelasyonu tümör + normal
+örnekler birlikte kullanılarak hesaplanmıştı. Bu durumda sınıf farkı, tümörde
+artan tüm özellikleri yapay olarak yüksek korelasyonlu gösterir. Etkisi protein
+panelinde belirgin oldu: 9 Düzey-1 (salgılanan) adayın 7'si, kana salgılanan
+LGALS3BP dahil, "fazlalık" gerekçesiyle elenmişti.
+
+**Düzeltme:** Fazlalık korelasyonu yalnızca tümörler içinde hesaplanır (iki
+belirtecin sınıf farkının ötesinde aynı bilgiyi taşıyıp taşımadığı).
+
+**Zamanlama ve şeffaflık:** Hata, serum etiketleri hiçbir analizde
+kullanılmadan önce fark edildi. miRNA paneli v1 (commit fca9e9b) ve v2 **aynı
+üyelere** sahiptir (miR-21-5p, miR-210-3p, miR-27a-3p, miR-935, miR-24-3p);
+düzeltilmiş kuralla v2 olarak yeniden kilitlendi. v1 dosyası geçmiş kaydı
+olarak depoda tutulur. WP6 doğrulaması **v2** dosyasını kullanır.
+
+**Protein aday paneli v2 (8):** SULF1, LGALS3BP, NMI, LAMC2, THBS1, CD55
+(Düzey 1: salgılanan + kanda ölçülmüş), GLA, SERPINB5 (Düzey 2: kanda ölçülmüş).
+Doku grup-CV AUC 0,992 (8 üye). Salgılanma/plazma kanıtı: HPA (secretome
+location, kanda MS konsantrasyonu) + UniProt (sinyal peptidi, 'Secreted');
+ham yanıtlar data/raw/annotations/ altında tarih damgalı.
+
+**Başvurudan sapma:** SignalP 6.0 ve SecretomeP yerine UniProt sinyal peptidi
+anotasyonu ve HPA salgılanma sınıflandırması kullanıldı (programatik,
+tekrarlanabilir, lisans gerektirmez; HPA sınıfı klasik dışı salgılanmayı da kapsar).
+
+**Sınırlılıklar:**
+- Protein paneli kanda **doğrulanmamıştır** (plazma proteomik kohortu yok);
+  "aday panel" olarak raporlanır.
+- THBS1 trombosit α-granüllerinde boldur ve pıhtılaşma sırasında serbestlenir;
+  ölçüm **plazmada** yapılmalıdır (serum değerleri trombosit aktivasyonunu yansıtır).
+- Hiçbir adayda HPA immünoanaliz (IM) kan ölçümü bulunmadı; ELISA
+  uygulanabilirliği ticari kit/antikor taramasıyla ayrıca teyit edilmelidir.

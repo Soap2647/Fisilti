@@ -11,13 +11,13 @@ Adımlar
   3. Kan hücresi / hemoliz kökenli miRNA'ların dışlanması (literatür listesi)
   4. Serumda ölçülebilirlik (etiketsiz): GSE59856 (3D-Gene) örneklerinin ≥ %50'sinde
      tespit sınırı üzerinde; GSE85589 platformunda bulunma
-  5. Fazlalık giderme: dokuda |Spearman r| > 0.7 olan daha düşük sıralı üye atılır
+  5. Fazlalık giderme: TÜMÖRLER İÇİNDE |Spearman r| > 0.7 olan daha düşük sıralı üye atılır
   6. Panel boyutu (5–10): dokuda hasta gruplu CV ile L2-lojistik AUC eğrisi;
      en yüksek AUC'nin 0.005 altına ilk ulaşılan boyut (en az 5)
 Skorlama kuralı (kilitli): panel miRNA'larının kohort-içi z-skorlarının ortalaması
 (tüm üyeler tümörde artan yönde). Serumda hiçbir ağırlık öğrenilmez.
 
-Çıktılar: results/panel/mirna_panel_v1.json, results/tables/wp5_mirna_panel_steps.tsv
+Çıktılar: results/panel/mirna_panel_v2.json, results/tables/wp5_mirna_panel_steps.tsv
 Çalıştırma:  .venv\\Scripts\\python.exe scripts/wp5_01_mirna_panel.py
 """
 
@@ -95,7 +95,9 @@ def main() -> None:
     lab = lab.loc[X.index]
     y = (lab.group == "PDAC").astype(int).to_numpy()
     groups = lab.patient.to_numpy()
-    corr = X[ranked.index].corr(method="spearman")
+    # Fazlalık korelasyonu YALNIZCA tümörler içinde (K-017): tümör+normal birlikte
+    # kullanılırsa sınıf farkı tüm ayırt edici özellikleri yapay olarak ilişkili gösterir.
+    corr = X.loc[y == 1, ranked.index].corr(method="spearman")
     kept, dropped_for = [], {}
     for m in ranked.index:
         hit = [k for k in kept if abs(corr.at[m, k]) > REDUND_R]
@@ -129,7 +131,7 @@ def main() -> None:
                             "detect_frac_GSE59856", "median_pct_GSE85589"]].round(3).to_string())
 
     lock = {
-        "panel": "Fısıltı miRNA paneli v1",
+        "panel": "Fısıltı miRNA paneli v2",
         "locked_utc": datetime.now(timezone.utc).isoformat(timespec="seconds"),
         "code_commit_at_lock": git_commit(),
         "members": [{"mimat": m, "name": steps.at[m, "name"], "direction": "up"} for m in panel],
@@ -137,14 +139,15 @@ def main() -> None:
         "selection_used_serum_labels": False,
         "criteria": {"sel_freq_min": SEL_MIN, "rho_acinar_max": RHO_ACINAR_MAX,
                      "serum_detect_frac_min_GSE59856": DETECT_MIN, "floor_GSE59856": FLOOR_59856,
-                     "redundancy_abs_spearman": REDUND_R, "size_range": [SIZE_MIN, SIZE_MAX],
+                     "redundancy_abs_spearman_within_tumors": REDUND_R,
+                     "supersedes": "v1 (fazlalık korelasyonu tümör+normal üzerinden hesaplanmıştı; K-017)", "size_range": [SIZE_MIN, SIZE_MAX],
                      "blood_cell_exclusion": sorted(BLOOD_CELL_MIRNAS)},
         "tissue_cv_auc_curve": {str(k): round(v, 4) for k, v in curve.items()},
     }
     out = PROJECT_ROOT / "results" / "panel"
     out.mkdir(parents=True, exist_ok=True)
-    (out / "mirna_panel_v1.json").write_text(json.dumps(lock, ensure_ascii=False, indent=2), encoding="utf-8")
-    print(f"[ok] kilit dosyası: results/panel/mirna_panel_v1.json")
+    (out / "mirna_panel_v2.json").write_text(json.dumps(lock, ensure_ascii=False, indent=2), encoding="utf-8")
+    print(f"[ok] kilit dosyası: results/panel/mirna_panel_v2.json")
 
 
 if __name__ == "__main__":
