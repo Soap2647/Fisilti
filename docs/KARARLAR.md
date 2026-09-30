@@ -414,3 +414,21 @@ doğrulamak (ya da çürütmek) için güvenilir bir zemin sunmayabilir; bu duru
 **Bilimsel çıkarım:** Serum miRNA biyobelirteç çalışmalarında tek kohortta elde
 edilen yüksek AUC'ler, bağımsız kohort ve platform doğrulaması olmadan
 güvenilir kabul edilmemelidir.
+
+## K-021 — Plazma protein verisi aranması (zaman sınırlı) ve doku dış doğrulamasının ön-kaydı
+*2026-09-30 · WP6*
+
+**Plazma verisi araması:** Kilitli protein panelini kanda sınamak için kamuya
+açık PDAC plazma proteomik verisi arandı. Human Disease Blood Atlas (pankreas
+kanseri içermiyor; bireysel veri kısıtlı), HPA kan sayfaları (pankreas kanseri
+verisi yok), DIA plazma çalışması (PMC13399626; veri "istek üzerine") ve Lin ve
+ark. 2026 Olink Explore HT çalışması (42 evre I–II PDAC / 43 kontrol;
+doi:10.1002/ijc.70637; ek tablolara erişilemedi) incelendi. Sunum takvimi (16 Ekim)
+nedeniyle arama burada sonlandırıldı. Protein paneli kanda doğrulanmamış "aday
+panel" olarak kalır; ilgili veri sahiplerine başvuru ve prospektif doğrulama
+(Kastamonu EAH) önerilecektir.
+
+**Doku dış doğrulaması (ön-kayıtlı):** Protein paneli v2'nin 8 geni, CPTAC'tan
+bağımsız üç GEO doku kohortunda mRNA düzeyinde sınanır. Plan
+`scripts/wp6_03_tissue_external.py` başlığındadır ve çalıştırılmadan önce commit
+edilmiştir. Bu doğrulama doku düzeyindedir; kan testi performansı iddiası taşımaz.
