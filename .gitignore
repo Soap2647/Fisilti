@@ -28,3 +28,10 @@ desktop.ini
 # Çalıştırma günlükleri
 results/*.log
 
+
+# Film render çıktıları
+sunum/render/node_modules/
+sunum/render/test/
+sunum/render/render.log
+sunum/*.mp4
+
