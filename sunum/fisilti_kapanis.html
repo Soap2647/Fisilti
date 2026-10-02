@@ -20,8 +20,11 @@ body { background: var(--bg); color: var(--ink); font-family: var(--sans); overf
 #flash { position: fixed; inset: 0; background: #FFF4EA; opacity: 0; pointer-events: none; }
 .cap { position: fixed; left: 50%; transform: translateX(-50%); bottom: 12%; width: min(1100px, calc(100% - 32px));
   text-align: center; opacity: 0; pointer-events: none; }
+.cap::before { content: ''; position: absolute; inset: -30px -40px; z-index: -1;
+  background: radial-gradient(ellipse closest-side, rgba(4, 7, 15, 0.66), rgba(4, 7, 15, 0)); }
 .cap p { margin: 0; }
-.cap .line { font-family: var(--serif); font-size: clamp(22px, 2.6vw, 44px); font-style: italic; line-height: 1.25; text-wrap: balance; }
+.cap .line { font-family: var(--serif); font-size: clamp(22px, 2.6vw, 44px); font-style: italic; line-height: 1.25; text-wrap: balance;
+  text-shadow: 0 0 14px rgba(4, 7, 15, 0.9), 0 0 4px rgba(4, 7, 15, 0.8); }
 .cap .small { font-family: var(--sans); font-size: clamp(12px, 1vw, 16px); letter-spacing: 0.22em; text-transform: uppercase; color: var(--muted); margin-top: 10px; }
 .cap.top { bottom: auto; top: 9%; }
 .tag { position: fixed; transform: translate(-50%, 0); font-family: var(--mono); font-size: clamp(11px, 1vw, 18px);
@@ -143,10 +146,22 @@ body.render #replay { display: none; }
   const fib = (m, n) => { const y = 1 - 2 * (m + 0.5) / n, r = Math.sqrt(1 - y * y), th = m * 2.399963; return [Math.cos(th) * r, y, Math.sin(th) * r]; };
   const ductY = x => 0.5 * Math.sin(x * 0.45);
   const sphereDir = (i, k) => { const th = h(i, k) * TAU, ph = Math.acos(2 * h(i, k + 1) - 1); return [Math.sin(ph) * Math.cos(th), Math.cos(ph), Math.sin(ph) * Math.sin(th)]; };
-  function tumorPos(k) {
-    const x = (h(k, 7) - 0.5) * 3, d = sphereDir(k, 8), dist = 0.3 + 1.9 * Math.sqrt(k / TUMOR_N);
-    return [x + d[0] * dist, ductY(x) + d[1] * dist * 0.8, d[2] * dist * 0.8];
+  // Tümör bezleri: 20 düzensiz bez x 8 hücre; kanaldan dışa doğru sırayla belirir (ses zamanlamasıyla aynı)
+  function tumorGland(g) {
+    const x = (h(g, 70) - 0.5) * 3.2, d = sphereDir(g, 71), dist = 0.3 + 1.7 * Math.sqrt(g / 20);
+    return [x + d[0] * dist, ductY(x) + d[1] * dist * 0.85, d[2] * dist * 0.75];
   }
+  function tumorCell(k) {
+    const g = Math.floor(k / 8), m = k % 8, C0 = tumorGland(g), nrm = sphereDir(g, 72);
+    let ux = [nrm[1], -nrm[0], 0], l = Math.hypot(ux[0], ux[1]);
+    ux = l < 1e-3 ? [1, 0, 0] : [ux[0] / l, ux[1] / l, 0];
+    const vx = [nrm[1] * ux[2] - nrm[2] * ux[1], nrm[2] * ux[0] - nrm[0] * ux[2], nrm[0] * ux[1] - nrm[1] * ux[0]];
+    const ang = m / 8 * TAU + (h(k, 73) - 0.5) * 0.5, r = 0.3 * (0.85 + 0.5 * h(k, 74)), off = (h(k, 75) - 0.5) * 0.18;
+    const pt = [0, 1, 2].map(i => C0[i] + (ux[i] * Math.cos(ang) + vx[i] * Math.sin(ang)) * r + nrm[i] * off);
+    const d = [pt[0] - C0[0], pt[1] - C0[1], pt[2] - C0[2]], dl = Math.hypot(...d) || 1;
+    return { p: pt, d: d.map(x => x / dl) };
+  }
+  function tumorPos(k) { return tumorCell(k).p; }
   const WELLS = PROTEINS.map((_, k) => [-3.3 + (k % 4) * 2.2, 0.95 - Math.floor(k / 4) * 1.9, 0]);
   const VX = 5, VL = 15, vesselZ = (u, t, sp) => ((u * VL + t * sp) % VL) - VL - 0.4;
 
@@ -206,7 +221,7 @@ body.render #replay { display: none; }
     o.c = C.pink; o.s = 3; o.a = 0.16;
   }
   function tissueP(i, t, o) {
-    stroma(i, t, o);
+    stroma(i, t, o); o.a *= 0.45;
     if (i % 10 === 0) { o.a = 0; return; } // proteinler henüz yok
   }
   function secreteP(i, t, o) {
@@ -253,6 +268,7 @@ body.render #replay { display: none; }
   const M = 600;
   function cell(c, t, o) {
     o.k = 0; o.a = 0; o.s = 1; o.x = 0; o.y = -50; o.z = 0; o.c = C.pink;
+    if (c < 580) return;  // doku ve alyuvarlar artık 3B ağlarla çiziliyor (aşağıda "Doku")
     const tissueOn = ss(20.5, 21.6, t) * (1 - ss(45, 47, t));
     if (c < 140) {
       const q = Math.floor(c / 14), f = fib(c % 14, 14), A = ACINI[q], fade = ss(33, 41, t + h(q, 63) * 2);
@@ -475,6 +491,222 @@ body.render #replay { display: none; }
     }
   }
 
+  // ---- Doku: gerçekçi 3B histoloji (asinüs, kanal, adacık, stroma, tümör bezleri, damar, alyuvar) ----
+  const tissue = (() => {
+    const UP = new THREE.Vector3(0, 1, 0), tmpQ = new THREE.Quaternion(), tmpM = new THREE.Matrix4();
+    const tmpV = new THREE.Vector3(), tmpS = new THREE.Vector3(), tmpA = new THREE.Vector3();
+    const uFog = { value: 0.055 };
+    const GL = `
+      vec3 h3(vec3 p){ p = vec3(dot(p, vec3(127.1, 311.7, 74.7)), dot(p, vec3(269.5, 183.3, 246.1)), dot(p, vec3(113.5, 271.9, 124.6)));
+        return fract(sin(p) * 43758.5453); }
+      float dots(vec3 p, float rad){ vec3 c = floor(p); vec3 r = fract(p) - (0.2 + 0.6 * h3(c)); return 1.0 - smoothstep(rad * 0.5, rad, length(r)); }
+      float fogf(float d, float dens){ return exp(-pow(d * dens, 2.0)); }
+      vec3 shade(vec3 base, vec3 n, vec3 v, float sss){
+        vec3 L = normalize(vec3(-0.45, 0.7, 0.55));
+        float wrap = clamp((dot(n, L) + 0.45) / 1.45, 0.0, 1.0);
+        float rim = pow(1.0 - abs(dot(n, v)), 2.2);
+        float spec = pow(max(dot(reflect(-L, n), v), 0.0), 30.0) * 0.2;
+        return base * (0.28 + 0.78 * wrap) + base * rim * sss + vec3(spec); }`;
+    const instVS = (extra) => `attribute vec4 aP; ${extra.decl || ''}
+      varying vec3 vN; varying vec3 vV; varying vec3 vObj; varying vec4 vP; varying float vD; varying float vAxis;
+      void main(){ vec3 p = position; ${extra.body || ''}
+        vec4 w = modelMatrix * instanceMatrix * vec4(p, 1.0); vec4 mv = viewMatrix * w;
+        vN = normalize(mat3(modelMatrix * instanceMatrix) * normal); vV = normalize(cameraPosition - w.xyz);
+        vObj = position; vP = aP; vD = -mv.z; vAxis = ${extra.axis || '0.0'}; gl_Position = projectionMatrix * mv; }`;
+
+    // Hücre: tepesi (y=-1, lümene bakar) dar, tabanı geniş piramit
+    const cellGeo = new THREE.SphereGeometry(1, 20, 14);
+    { const pa = cellGeo.attributes.position, ax = new Float32Array(pa.count);
+      for (let i = 0; i < pa.count; i++) { const y = pa.getY(i), w = lerp(0.36, 1.0, ss(-1, 0.9, y)); pa.setX(i, pa.getX(i) * w); pa.setZ(i, pa.getZ(i) * w); ax[i] = y; }
+      cellGeo.setAttribute('aAxis', new THREE.BufferAttribute(ax, 1)); cellGeo.computeVertexNormals(); }
+    const nucGeo = new THREE.SphereGeometry(1, 16, 12);
+    // Alyuvar: bikonkav disk (Evans-Fung profili, döndürülerek)
+    const rbcGeo = (() => { const z = r => 0.5 * Math.sqrt(Math.max(0, 1 - r * r)) * (0.207 + 2.003 * r * r - 1.123 * r ** 4), pts = [];
+      for (let i = 0; i <= 20; i++) { const r = Math.sin(i / 20 * Math.PI / 2); pts.push(new THREE.Vector2(r, z(r))); }
+      for (let i = 19; i >= 0; i--) { const r = Math.sin(i / 20 * Math.PI / 2); pts.push(new THREE.Vector2(r, -z(r))); }
+      const g = new THREE.LatheGeometry(pts, 32); g.computeVertexNormals(); return g; })();
+
+    const cellMat = new THREE.ShaderMaterial({ uniforms: { uFog },
+      vertexShader: instVS({ decl: 'attribute float aAxis;', axis: 'aAxis' }),
+      fragmentShader: `precision highp float; uniform float uFog;
+        varying vec3 vN; varying vec3 vV; varying vec3 vObj; varying vec4 vP; varying float vD; varying float vAxis; ${GL}
+        void main(){ vec3 n = normalize(vN); if (!gl_FrontFacing) n = -n; vec3 v = normalize(vV);
+          float kind = vP.w, tum = vP.x;
+          float apical = smoothstep(0.35, -0.75, vAxis);
+          vec3 col = mix(vec3(0.56, 0.36, 0.66), vec3(0.93, 0.46, 0.60), apical);          // bazal bazofilik -> apikal eozinofilik
+          col = mix(col, vec3(1.0, 0.36, 0.48), dots(vObj * 7.0 + vP.z * 13.0, 0.32) * apical * 0.8);  // zimojen granülleri
+          if (kind > 0.5 && kind < 1.5) col = vec3(0.70, 0.52, 0.70);                       // kanal epiteli
+          if (kind > 1.5 && kind < 2.5) col = vec3(0.76, 0.60, 0.74);                       // Langerhans adacığı
+          vec3 tcol = mix(vec3(0.78, 0.53, 0.62), vec3(0.88, 0.70, 0.76), dots(vObj * 5.0 + vP.z * 7.0, 0.42) * 0.6);  // müsinli tümör sitoplazması
+          col = mix(col, tcol, kind > 2.5 ? 1.0 : tum);
+          vec3 c = shade(col, n, v, 0.42);
+          c += vec3(1.0, 0.5, 0.3) * pow(1.0 - abs(dot(n, v)), 3.0) * 0.1 * (kind > 2.5 ? 1.0 : tum);
+          c = min(c, vec3(0.92));
+          float a = vP.y * (0.5 + 0.45 * pow(1.0 - abs(dot(n, v)), 1.5)) * fogf(vD, uFog);
+          gl_FragColor = vec4(c, a); }`,
+      transparent: true, depthWrite: false, side: THREE.DoubleSide });
+    const nucMat = new THREE.ShaderMaterial({ uniforms: { uFog },
+      vertexShader: instVS({ body: `float bump = 0.5 * sin(dot(position, vec3(3.1, 5.3, 2.7)) * 2.2 + aP.z * 40.0) + 0.5 * sin(dot(position, vec3(-4.3, 2.1, 3.9)) * 3.1 + aP.z * 17.0);
+          p *= 1.0 + 0.14 * bump * aP.x;` }),                                                  // tümörde düzensiz (pleomorfik) çekirdek
+      fragmentShader: `precision highp float; uniform float uFog;
+        varying vec3 vN; varying vec3 vV; varying vec3 vObj; varying vec4 vP; varying float vD; varying float vAxis; ${GL}
+        void main(){ vec3 n = normalize(vN); vec3 v = normalize(vV); float tum = vP.x;
+          vec3 hema = mix(vec3(0.36, 0.25, 0.62), vec3(0.20, 0.10, 0.40), tum);              // hematoksilen
+          if (vP.w > 3.5) hema = vec3(0.32, 0.23, 0.55);                                      // fibroblast
+          vec3 col = hema * (1.0 - 0.38 * dots(vObj * mix(6.0, 4.0, tum) + vP.z * 9.0, mix(0.35, 0.5, tum)));  // kromatin
+          float nucleolus = (1.0 - smoothstep(0.18, 0.3, length(vObj - vec3(0.25, 0.3, 0.35)))) * (0.25 + 0.75 * tum);
+          col = mix(col, vec3(0.78, 0.30, 0.52), nucleolus);
+          gl_FragColor = vec4(shade(col, n, v, 0.3), vP.y * fogf(vD, uFog)); }`,
+      transparent: true, depthWrite: true });
+    const fibVS = `varying vec2 vUv; varying vec3 vN; varying vec3 vV; varying float vD;
+      void main(){ vec4 w = modelMatrix * vec4(position, 1.0); vec4 mv = viewMatrix * w; vUv = uv;
+        vN = normalize(mat3(modelMatrix) * normal); vV = normalize(cameraPosition - w.xyz); vD = -mv.z; gl_Position = projectionMatrix * mv; }`;
+    const fibFS = `precision highp float; uniform float uFog; uniform float uOpacity; varying vec2 vUv; varying vec3 vN; varying vec3 vV; varying float vD; ${GL}
+      void main(){ vec3 n = normalize(vN); if (!gl_FrontFacing) n = -n; vec3 v = normalize(vV);
+        vec3 col = vec3(0.90, 0.58, 0.70) * (0.92 + 0.08 * sin(vUv.x * 520.0));               // kolajen çizgilenmesi
+        float rim = 1.0 - abs(dot(n, v));
+        gl_FragColor = vec4(shade(col, n, v, 0.4), uOpacity * (0.3 + 0.45 * rim) * fogf(vD, uFog)); }`;
+
+    // --- örnekler ---
+    const E = [];
+    const addCell = (o) => { o.q = new THREE.Quaternion().setFromUnitVectors(UP, o.d); if (!o.c) o.c = o.pos.clone(); E.push(o); };
+    // Asinüsler: ortadaki lümenin çevresinde 13 piramit hücre
+    const AC = [];
+    for (let k = 0; AC.length < 36 && k < 600; k++) {
+      const x = (h(k, 80) - 0.5) * 17, y = (h(k, 81) - 0.5) * 9.5, z = -6 + h(k, 82) * 7.4;
+      if (Math.abs(y - ductY(x)) < 1.25 && z > -1.8) continue;
+      if (Math.hypot(x + 3.8, y + 2.6, z + 1.0) < 1.7) continue;
+      if (AC.some(a => Math.hypot(a[0] - x, a[1] - y, a[2] - z) < 1.75)) continue;
+      AC.push([x, y, z, 0.78 * (0.85 + 0.3 * h(k, 83))]);
+    }
+    AC.forEach((a, q) => {
+      const c = new THREE.Vector3(a[0], a[1], a[2]), R = a[3];
+      for (let m = 0; m < 13; m++) {
+        const f = fib(m, 13), j = sphereDir(q * 13 + m, 84);
+        const d = new THREE.Vector3(f[0] + j[0] * 0.18, f[1] + j[1] * 0.18, f[2] + j[2] * 0.18).normalize();
+        addCell({ kind: 0, group: q, c, d, seed: h(q * 13 + m, 85), pos: c.clone().addScaledVector(d, 0.5 * R),
+          sc: new THREE.Vector3(0.31 * R, 0.38 * R, 0.31 * R), npos: c.clone().addScaledVector(d, 0.72 * R), nr: 0.13 * R });
+      }
+    });
+    // Pankreas kanalı: küboidal epitel halkaları
+    for (let x = -6.6, ring = 0; x <= 6.6; x += 0.3, ring++) {
+      const T = new THREE.Vector3(1, 0.225 * Math.cos(0.45 * x), 0).normalize(), N1 = new THREE.Vector3(-T.y, T.x, 0), N2 = new THREE.Vector3(0, 0, 1);
+      const axis = new THREE.Vector3(x, ductY(x), 0);
+      for (let a = 0; a < 8; a++) {
+        const ang = a / 8 * TAU + ring * 0.2, d = N1.clone().multiplyScalar(Math.cos(ang)).addScaledVector(N2, Math.sin(ang));
+        addCell({ kind: 1, ax: x, d, seed: h(ring * 8 + a, 86), pos: axis.clone().addScaledVector(d, 0.32),
+          sc: new THREE.Vector3(0.15, 0.13, 0.15), npos: axis.clone().addScaledVector(d, 0.335), nr: 0.075 });
+      }
+    }
+    // Langerhans adacığı
+    const IS = new THREE.Vector3(-3.8, -2.6, -1.0);
+    for (let m = 0; m < 34; m++) {
+      const dd = sphereDir(m, 87), d = new THREE.Vector3(...dd), pos = IS.clone().addScaledVector(d, 0.85 * Math.cbrt(h(m, 88)));
+      addCell({ kind: 2, d, seed: h(m, 89), pos, sc: new THREE.Vector3(0.17, 0.17, 0.17), npos: pos.clone(), nr: 0.075 });
+    }
+    // Tümör bezleri
+    for (let k = 0; k < TUMOR_N; k++) {
+      const tc = tumorCell(k), pos = new THREE.Vector3(...tc.p), d = new THREE.Vector3(...tc.d);
+      addCell({ kind: 3, k, d, seed: h(k, 76), pos, sc: new THREE.Vector3(0.2, 0.24, 0.2), npos: pos.clone().addScaledVector(d, 0.07), nr: 0.11 });
+    }
+    const NC = E.length;
+
+    // Stroma lifleri (yarısı tümör çevresinde sonradan belirir: desmoplazi) + iğsi fibroblast çekirdekleri
+    const fibers = [], FN = [];
+    for (let f = 0; f < 70; f++) {
+      const desmo = f < 34; let x, y, z;
+      if (desmo) { const a = (h(f, 90) - 0.5) * 5.5; x = a; y = ductY(a) + (h(f, 91) - 0.5) * 3.6; z = -2.2 + h(f, 92) * 3.4; }
+      else { x = (h(f, 90) - 0.5) * 18; y = (h(f, 91) - 0.5) * 10; z = -6.5 + h(f, 92) * 7.5; }
+      const pts = [], dir = new THREE.Vector3(...sphereDir(f, 93));
+      for (let st = 0; st < 6; st++) {
+        pts.push(new THREE.Vector3(x, y, z)); const w = sphereDir(f * 7 + st, 94);
+        dir.add(new THREE.Vector3(w[0] * 0.6, w[1] * 0.6, w[2] * 0.6)).normalize();
+        const L = desmo ? 0.7 : 1.1; x += dir.x * L; y += dir.y * L; z += dir.z * L;
+      }
+      const curve = new THREE.CatmullRomCurve3(pts);
+      const mat = new THREE.ShaderMaterial({ uniforms: { uFog, uOpacity: { value: 0 } }, vertexShader: fibVS, fragmentShader: fibFS,
+        transparent: true, depthWrite: false, side: THREE.DoubleSide });
+      const mesh = new THREE.Mesh(new THREE.TubeGeometry(curve, 60, desmo ? 0.03 : 0.04, 5, false), mat);
+      mesh.frustumCulled = false; mesh.renderOrder = 2; scene.add(mesh);
+      fibers.push({ mesh, desmo, born: 33 + h(f, 95) * 6, op: 0 });
+      for (const u of [0.3, 0.72]) {
+        const tg = curve.getTangentAt(u).normalize();
+        FN.push({ f, pos: curve.getPointAt(u), q: new THREE.Quaternion().setFromUnitVectors(UP, tg), sc: new THREE.Vector3(0.045, 0.16, 0.045), seed: h(f * 2 + u * 10, 99) });
+      }
+    }
+
+    const cAP = new THREE.InstancedBufferAttribute(new Float32Array(NC * 4), 4);
+    const nAP = new THREE.InstancedBufferAttribute(new Float32Array((NC + FN.length) * 4), 4);
+    cellGeo.setAttribute('aP', cAP); nucGeo.setAttribute('aP', nAP);
+    const cellMesh = new THREE.InstancedMesh(cellGeo, cellMat, NC), nucMesh = new THREE.InstancedMesh(nucGeo, nucMat, NC + FN.length);
+    for (const m of [cellMesh, nucMesh]) { m.frustumCulled = false; scene.add(m); }
+    nucMesh.renderOrder = 3; cellMesh.renderOrder = 4;
+
+    // Kılcal damar: içten endotel hücre dokusu
+    const vGeo = new THREE.CylinderGeometry(1.35, 1.35, 15, 48, 40, true); vGeo.rotateX(Math.PI / 2); vGeo.translate(VX, 0, -4.9);
+    const vessel = new THREE.Mesh(vGeo, new THREE.ShaderMaterial({ uniforms: { uFog, uOpacity: { value: 0 } },
+      vertexShader: `varying vec3 vN; varying vec3 vV; varying float vD; varying vec2 vCyl;
+        void main(){ vec4 w = modelMatrix * vec4(position, 1.0); vec4 mv = viewMatrix * w; vN = normalize(mat3(modelMatrix) * normal);
+          vV = normalize(cameraPosition - w.xyz); vD = -mv.z; vCyl = vec2(uv.x, position.z); gl_Position = projectionMatrix * mv; }`,
+      fragmentShader: `precision highp float; uniform float uFog; uniform float uOpacity; varying vec3 vN; varying vec3 vV; varying float vD; varying vec2 vCyl; ${GL}
+        vec2 h2(vec2 p){ p = vec2(dot(p, vec2(127.1, 311.7)), dot(p, vec2(269.5, 183.3))); return fract(sin(p) * 43758.5453); }
+        void main(){ vec2 q = vec2(vCyl.x * 20.0, vCyl.y * 0.9), ip = floor(q), fp = fract(q); float f1 = 8.0, f2 = 8.0;
+          for (int j = -1; j <= 1; j++) for (int i = -1; i <= 1; i++) { vec2 b = vec2(float(i), float(j)); vec2 r = b - fp + h2(vec2(mod(ip.x + b.x, 20.0), ip.y + b.y)); float d = dot(r, r);
+            if (d < f1) { f2 = f1; f1 = d; } else if (d < f2) { f2 = d; } }
+          f1 = sqrt(f1); f2 = sqrt(f2);
+          float border = 1.0 - smoothstep(0.0, 0.08, f2 - f1), nucl = 1.0 - smoothstep(0.1, 0.18, f1);
+          vec3 n = normalize(vN); if (!gl_FrontFacing) n = -n; vec3 v = normalize(vV);
+          vec3 col = mix(vec3(0.62, 0.20, 0.28), vec3(0.95, 0.55, 0.62), border); col = mix(col, vec3(0.40, 0.22, 0.56), nucl * 0.85);
+          gl_FragColor = vec4(shade(col, n, v, 0.4), uOpacity * (0.16 + 0.42 * border + 0.5 * nucl) * fogf(vD, uFog)); }`,
+      transparent: true, depthWrite: false, side: THREE.DoubleSide }));
+    vessel.frustumCulled = false; vessel.renderOrder = 5; scene.add(vessel);
+    const NR = 150;
+    const rbcMesh = new THREE.InstancedMesh(rbcGeo, new THREE.ShaderMaterial({ uniforms: { uFog, uOpacity: { value: 0 } },
+      vertexShader: `varying vec3 vN; varying vec3 vV; varying float vD;
+        void main(){ vec4 w = modelMatrix * instanceMatrix * vec4(position, 1.0); vec4 mv = viewMatrix * w;
+          vN = normalize(mat3(modelMatrix * instanceMatrix) * normal); vV = normalize(cameraPosition - w.xyz); vD = -mv.z; gl_Position = projectionMatrix * mv; }`,
+      fragmentShader: `precision highp float; uniform float uFog; uniform float uOpacity; varying vec3 vN; varying vec3 vV; varying float vD; ${GL}
+        void main(){ vec3 n = normalize(vN); if (!gl_FrontFacing) n = -n; vec3 v = normalize(vV);
+          gl_FragColor = vec4(shade(vec3(0.80, 0.11, 0.17), n, v, 0.65), uOpacity * 0.96 * fogf(vD, uFog)); }`,
+      transparent: true, depthWrite: true }), NR);
+    rbcMesh.frustumCulled = false; rbcMesh.renderOrder = 4; scene.add(rbcMesh);
+
+    function update(t) {
+      const on = ss(20.5, 21.6, t) * (1 - ss(45, 47, t)), vOn = ss(43.5, 46.5, t) * (1 - ss(53.6, 54.0, t));
+      const show = on > 0.002;
+      cellMesh.visible = nucMesh.visible = show;
+      for (const f of fibers) { f.op = on * (f.desmo ? ss(f.born, f.born + 2.5, t) * 0.9 : 0.6); f.mesh.material.uniforms.uOpacity.value = f.op; f.mesh.visible = f.op > 0.002; }
+      if (show) {
+        for (let i = 0; i < NC; i++) {
+          const e = E[i]; let sc = 1, a = on, tum = 0, ns = 1;
+          if (e.kind === 0) { const fade = ss(33, 41, t + h(e.group, 63) * 2); sc = 1 - 0.35 * fade; a *= 1 - 0.92 * fade; }
+          else if (e.kind === 1) { tum = Math.abs(e.ax) < 1.8 ? ss(31, 34, t) : 0; sc = 1 + 0.25 * tum; ns = 1 + 0.25 * tum; }
+          else if (e.kind === 2) { a *= 1 - 0.5 * ss(36, 42, t); }
+          else { const g = ss(TUMOR_T(e.k), TUMOR_T(e.k) + 0.5, t); sc = Math.max(g, 0.001); a *= g; tum = 1; }
+          tmpV.copy(e.pos).sub(e.c).multiplyScalar(sc).add(e.c); tmpS.copy(e.sc).multiplyScalar(sc);
+          tmpM.compose(tmpV, e.q, tmpS); cellMesh.setMatrixAt(i, tmpM); cAP.setXYZW(i, tum, a, e.seed, e.kind);
+          const nr = e.nr * sc * ns;
+          tmpV.copy(e.npos).sub(e.c).multiplyScalar(sc).add(e.c); tmpS.set(nr, nr * (e.kind === 3 ? 1.15 : 1), nr);
+          tmpM.compose(tmpV, e.q, tmpS); nucMesh.setMatrixAt(i, tmpM); nAP.setXYZW(i, tum, Math.min(1, a * 1.15), e.seed, e.kind);
+        }
+        FN.forEach((e, j) => { tmpM.compose(e.pos, e.q, e.sc); nucMesh.setMatrixAt(NC + j, tmpM); nAP.setXYZW(NC + j, 0, fibers[e.f].op, e.seed, 4); });
+        cellMesh.instanceMatrix.needsUpdate = true; nucMesh.instanceMatrix.needsUpdate = true; cAP.needsUpdate = true; nAP.needsUpdate = true;
+      }
+      vessel.visible = rbcMesh.visible = vOn > 0.002;
+      if (vOn > 0.002) {
+        vessel.material.uniforms.uOpacity.value = vOn; rbcMesh.material.uniforms.uOpacity.value = vOn;
+        for (let c = 0; c < NR; c++) {
+          const r = 0.95 * Math.sqrt(h(c, 8)), ang = h(c, 9) * TAU, ax = sphereDir(c, 96);
+          tmpV.set(VX + Math.cos(ang) * r, Math.sin(ang) * r, vesselZ(h(c, 10), t, 2.4));
+          tmpQ.setFromAxisAngle(tmpA.set(ax[0], ax[1], ax[2]), h(c, 97) * TAU + t * (0.6 + h(c, 98)));
+          tmpS.setScalar(0.34); tmpM.compose(tmpV, tmpQ, tmpS); rbcMesh.setMatrixAt(c, tmpM);
+        }
+        rbcMesh.instanceMatrix.needsUpdate = true;
+      }
+    }
+    return { update, counts: { cells: NC, acini: AC.length, fibroblasts: FN.length } };
+  })();
+
   const composer = new THREE.EffectComposer(renderer);
   composer.addPass(new THREE.RenderPass(scene, camera));
   const bloom = new THREE.UnrealBloomPass(new THREE.Vector2(1920, 1080), 1.05, 0.55, 0.12);
@@ -518,12 +750,13 @@ body.render #replay { display: none; }
     const [cp, cl] = camAt(t);
     camera.position.set(cp[0], cp[1], cp[2]); camera.lookAt(cl[0], cl[1], cl[2]);
     updateAnatomy(t);
+    tissue.update(t);
     scene.fog.density = t > 20.5 && t < 54 ? 0.045 : (t < 17 ? 0.006 : 0.02);
     const inside = t > 20.8 && t < 53.9;
     // Gövde → dalış: kamera pankreasa girene kadar ışıma yumuşakça artar (lobül dokusu görünür kalsın)
     const bodyScene = t >= 7 && t < 20.5, enter = ss(17.7, 18.5, t);
-    bloom.threshold = inside ? 0.5 : (bodyScene ? lerp(0.86, 0.12, enter) : 0.12);
-    bloom.strength = (inside ? 0.45 : (bodyScene ? lerp(0.6, 0.95, enter) : 0.95)) + 0.6 * Math.exp(-(((t - 20.4) / 0.4) ** 2)) + 0.5 * Math.exp(-(((t - 64.6) / 0.6) ** 2)) + (t > 17 && t < 20.5 ? 0.4 * enter : 0);
+    bloom.threshold = inside ? 0.62 : (bodyScene ? lerp(0.86, 0.12, enter) : 0.12);
+    bloom.strength = (inside ? 0.36 : (bodyScene ? lerp(0.6, 0.95, enter) : 0.95)) + 0.6 * Math.exp(-(((t - 20.4) / 0.4) ** 2)) + 0.5 * Math.exp(-(((t - 64.6) / 0.6) ** 2)) + (t > 17 && t < 20.5 ? 0.4 * enter : 0);
     composer.render();
 
     const fl = 0.95 * Math.exp(-(((t - 20.4) / 0.16) ** 2)) + 0.7 * Math.exp(-(((t - 54.0) / 0.14) ** 2));
