@@ -30,17 +30,20 @@ body { background: var(--bg); color: var(--ink); font-family: var(--sans); overf
   color: var(--ink); background: rgba(10, 16, 32, 0.7); border: 1px solid rgba(242, 237, 227, 0.2); border-radius: 999px; padding: 8px 16px; cursor: pointer; }
 #replay:focus-visible { outline: 2px solid var(--coral); outline-offset: 2px; }
 body.render #replay { display: none; }
+.olabel { position: fixed; transform: translate(-50%, -50%); font-family: var(--sans); font-size: clamp(11px, 0.95vw, 17px);
+  letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink); opacity: 0; white-space: nowrap; pointer-events: none;
+  text-shadow: 0 0 10px rgba(4, 7, 15, 0.9); }
+.olabel.main { color: var(--coral); font-weight: 600; }
 </style>
 
 <canvas id="stage" aria-label="Beden, pankreas dokusu ve kan damarı içinde ilerleyen sinematik 3B animasyon"></canvas>
 <div id="flash"></div>
 <div class="cap" data-t="2.4,6.6"><p class="line">Her şey bir fısıltıyla başlar.</p></div>
-<div class="cap" data-t="11.6,16.4"><p class="small">Pankreas</p></div>
 <div class="cap" data-t="22.5,30.2"><p class="line">Sağlıklı doku.</p><p class="small">Pankreas · asiner hücreler</p></div>
 <div class="cap" data-t="33.5,41.4"><p class="line">Tümör sessizce büyür; sağlıklı doku kaybolur.</p></div>
 <div class="cap" data-t="44.6,53.4"><p class="line">Ve kana bir iz bırakır.</p></div>
 <div class="cap top" data-t="55.2,63.4"><p class="small">8 protein · tek kan testi · vizyon: plazmada doğrulanacak</p></div>
-<div class="cap" data-t="67.4,73.2"><p class="line">Kandaki fısıltıyı duymak.</p><p class="small">Mert Yasin Yılmaz · Kastamonu Üniversitesi · 2026</p></div>
+<div class="cap" data-t="67.4,73.2"><p class="line">Kandaki fısıltıyı duymak.</p><p class="small">Mert Yasin Yılmaz · Kastamonu Üniversitesi · 2026</p><p class="small" style="margin-top:14px;font-size:clamp(10px,0.75vw,13px);opacity:0.7">Anatomi: BodyParts3D © The Database Center for Life Science · CC BY-SA 2.1 JP</p></div>
 <button id="replay" type="button">Baştan oynat</button>
 
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"></script>
@@ -50,6 +53,8 @@ body.render #replay { display: none; }
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/RenderPass.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/ShaderPass.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/UnrealBloomPass.js"></script>
+<!-- BodyParts3D türevi anatomi verisi (scripts/wp7_03_anatomy_assets.py) -->
+<script src="assets/anatomy.js"></script>
 <script>
 (() => {
   const RENDER = location.hash === '#render';
@@ -94,9 +99,8 @@ body.render #replay { display: none; }
 
   // ---- Kamera anahtar kareleri: [zaman, konum, bakış] ; 20.5 ve 54'te flaş altında kesme ----
   const KEYS = [
-    [0, [0, 0.6, 14], [0, 0.6, 0]],
-    [7, [0, 0.9, 9.5], [0, 0.6, 0]],
-    [11, [0.3, 0.6, 5.8], [0, 0.4, 0]],
+    [0, [0, -1.2, 30], [0, -2, 0]],
+    [7, [0, -1.4, 25.5], [0, -2, 0]],
     [17, [0.05, 0.3, 1.7], [0, 0.25, -4]],
     [20.5, [0, 0.25, -11.5], [0, 0.25, -20]],
     [20.5001, [0, 0.2, 11], [0, 0, 0]],
@@ -109,7 +113,16 @@ body.render #replay { display: none; }
     [64, [0, 0, 8.6], [0, -0.1, 0]],
     [74, [0, 0, 11.5], [0, 0, 0]]
   ];
+  // Gövde bölümü (7–17 sn): tüm bedenden pankreasa Catmull-Rom eğrisi
+  const BODY_POS = [[0, -1.4, 25.5], [1.3, 0.2, 13], [1.0, 0.75, 7.2], [0.55, 0.5, 3.6], [0.05, 0.3, 1.7]];
+  const BODY_LOOK = [[0, -2, 0], [0, -0.3, 0], [0, 0.4, 0], [0, 0.28, 0], [0, 0.25, -4]];
+  let bodyCurves = null;
   function camAt(t) {
+    if (t >= 7 && t <= 17) {
+      if (!bodyCurves) bodyCurves = [BODY_POS, BODY_LOOK].map(ps => new THREE.CatmullRomCurve3(ps.map(q => new THREE.Vector3(...q))));
+      const u = ss(7, 17, t), cp = bodyCurves[0].getPointAt(u), cl = bodyCurves[1].getPointAt(u);
+      return [[cp.x, cp.y, cp.z], [cl.x, cl.y, cl.z]];
+    }
     let a = KEYS[0], b = KEYS[KEYS.length - 1];
     for (let k = 0; k < KEYS.length - 1; k++) if (t >= KEYS[k][0] && t <= KEYS[k + 1][0]) { a = KEYS[k]; b = KEYS[k + 1]; break; }
     const u = b[0] === a[0] ? 1 : ss(a[0], b[0], t);
@@ -155,7 +168,8 @@ body.render #replay { display: none; }
     o.x = d[0] * r; o.y = d[1] * r * 0.7; o.z = d[2] * r - 6;
     o.c = C.star; o.s = 2.6 + h(i, 4) * 2; o.a = 0.25 + 0.2 * Math.sin(t * 1.7 + h(i, 5) * TAU);
   }
-  function body(i, t, o) {
+  function bodyStars(i, t, o) { stars(i, t, o); o.a *= 1 - 0.65 * ss(7, 10, t); }
+  function bodyOld(i, t, o) {
     if (i % 7 === 0) { // pankreas
       const u = h(i, 2), th = h(i, 3) * TAU, rr = (0.17 * (1 - 0.55 * u)) * Math.sqrt(h(i, 4));
       o.x = -0.78 + u * 1.55; o.y = 0.28 + 0.1 * Math.sin(u * 3.1) - 0.12 * u + rr * Math.cos(th); o.z = 0.05 + rr * Math.sin(th);
@@ -231,7 +245,7 @@ body.render #replay { display: none; }
     o.s = 3.6; o.a = 0.9 * (1 - ss(72.2, 74, t));
   }
   const SECTIONS = [
-    { s: 0, fn: stars }, { s: 7, fn: body, blend: 3 }, { s: 17, fn: tunnel, blend: 0.9 },
+    { s: 0, fn: stars }, { s: 7, fn: bodyStars }, { s: 17, fn: tunnel, blend: 0.9 },
     { s: 20.5, fn: tissueP }, { s: 42, fn: secreteP }, { s: 54, fn: testP }, { s: 64, fn: finalP, blend: 3.2 }
   ];
 
@@ -318,6 +332,149 @@ body.render #replay { display: none; }
   const cellsSys = makePoints(M, cellFS);
   const partSys = makePoints(N, glowFS);
 
+  // ---- Anatomi (BodyParts3D) ----
+  const ANAT = window.ANATOMY || null;
+  const dec = (b64, T) => { const s = atob(b64), u = new Uint8Array(s.length); for (let i = 0; i < s.length; i++) u[i] = s.charCodeAt(i); return new T(u.buffer); };
+  const anat = { skin: null, meshes: [], pancreas: null, labels: [] };
+  const NOISE = `
+    vec3 hash3(vec3 p){ p = vec3(dot(p, vec3(127.1, 311.7, 74.7)), dot(p, vec3(269.5, 183.3, 246.1)), dot(p, vec3(113.5, 271.9, 124.6)));
+      return fract(sin(p) * 43758.5453123); }
+    void worley(vec3 x, out float f1, out float f2, out float id){
+      vec3 p = floor(x), f = fract(x); f1 = 8.0; f2 = 8.0; id = 0.0;
+      for (int k = -1; k <= 1; k++) for (int j = -1; j <= 1; j++) for (int i = -1; i <= 1; i++) {
+        vec3 b = vec3(float(i), float(j), float(k)); vec3 hh = hash3(p + b); vec3 r = b - f + hh; float d = dot(r, r);
+        if (d < f1) { f2 = f1; f1 = d; id = hh.x; } else if (d < f2) { f2 = d; } }
+      f1 = sqrt(f1); f2 = sqrt(f2); }`;
+  if (ANAT) {
+    // Deri + kaburga noktaları: kenar parlamalı x-ışını görünümü, yıldızlardan toplanarak oluşur
+    const sp = dec(ANAT.skin.p, Float32Array), sn = dec(ANAT.skin.n, Float32Array);
+    const bp = dec(ANAT.bones.p, Float32Array), bn = dec(ANAT.bones.n, Float32Array);
+    const n = ANAT.skin.count + ANAT.bones.count;
+    const pos = new Float32Array(n * 3), nor = new Float32Array(n * 3), start = new Float32Array(n * 3), kind = new Float32Array(n), rnd = new Float32Array(n);
+    pos.set(sp); pos.set(bp, sp.length); nor.set(sn); nor.set(bn, sn.length);
+    for (let i = 0; i < n; i++) {
+      const d = sphereDir(i + 77, 20), r = 14 + h(i, 23) * 18;
+      start[i * 3] = d[0] * r; start[i * 3 + 1] = d[1] * r * 0.7 - 2; start[i * 3 + 2] = d[2] * r - 4;
+      kind[i] = i < ANAT.skin.count ? 0 : 1; rnd[i] = h(i, 24);
+    }
+    const g = new THREE.BufferGeometry();
+    g.setAttribute('position', new THREE.BufferAttribute(pos, 3)); g.setAttribute('normal', new THREE.BufferAttribute(nor, 3));
+    g.setAttribute('aStart', new THREE.BufferAttribute(start, 3)); g.setAttribute('aKind', new THREE.BufferAttribute(kind, 1));
+    g.setAttribute('aRand', new THREE.BufferAttribute(rnd, 1));
+    const m = new THREE.ShaderMaterial({
+      uniforms: { uPixel: { value: renderer.getPixelRatio() }, uScale: { value: 1 }, uAssemble: { value: 0 }, uScanY: { value: 99 }, uAlpha: { value: 0 } },
+      vertexShader: `attribute vec3 aStart; attribute float aKind; attribute float aRand;
+        uniform float uPixel, uScale, uAssemble, uScanY, uAlpha; varying vec3 vC; varying float vA;
+        void main(){
+          float a = clamp((uAssemble - aRand * 0.35) / 0.65, 0.0, 1.0); a = a * a * (3.0 - 2.0 * a);
+          vec3 p = mix(aStart, position, a);
+          vec4 world = modelMatrix * vec4(p, 1.0); vec4 mv = viewMatrix * world;
+          vec3 nn = normalize(mat3(modelMatrix) * normal); vec3 vd = normalize(cameraPosition - world.xyz);
+          float rim = 1.0 - abs(dot(nn, vd));
+          float beam = exp(-pow((position.y - uScanY) / 0.16, 2.0));
+          float base = aKind < 0.5 ? (0.09 + 1.6 * pow(rim, 2.4)) : 0.32;
+          base = mix(0.75, base, a);                                   // uçuşan toz parlak, yerine oturunca x-ışını
+          float nearFade = aKind < 0.5 ? smoothstep(0.35, 1.6, -mv.z) : smoothstep(2.4, 5.5, -mv.z);
+          vA = uAlpha * (base + 1.3 * beam) * nearFade;
+          vC = aKind < 0.5 ? mix(vec3(0.36, 0.6, 0.96), vec3(0.92, 0.96, 1.0), min(1.0, beam * 0.8 + pow(rim, 6.0) * 0.4)) : vec3(0.86, 0.83, 0.76);
+          gl_PointSize = max(1.6, 2.1 * uPixel * uScale * (10.0 / max(0.25, -mv.z)) * (1.0 + beam * 0.7) * mix(2.2, 1.0, a));
+          gl_Position = projectionMatrix * mv; }`,
+      fragmentShader: `precision mediump float; varying vec3 vC; varying float vA;
+        void main(){ vec2 c = gl_PointCoord - vec2(0.5); float d = length(c); if (d > 0.5) discard;
+          float a = smoothstep(0.5, 0.0, d); gl_FragColor = vec4(vC * a * vA, 1.0); }`,
+      transparent: true, depthWrite: false, blending: THREE.AdditiveBlending
+    });
+    anat.skin = new THREE.Points(g, m); anat.skin.frustumCulled = false; scene.add(anat.skin);
+
+    // Organ ağları: x-ışını (fresnel) gölgelendirici; pankreas için lobüllü doku gölgelendiricisi
+    const xrayVS = `varying vec3 vN; varying vec3 vV; varying float vY;
+      void main(){ vec4 mv = modelViewMatrix * vec4(position, 1.0); vN = normalize(normalMatrix * normal); vV = normalize(-mv.xyz);
+        vY = (modelMatrix * vec4(position, 1.0)).y; gl_Position = projectionMatrix * mv; }`;
+    const xrayFS = `precision mediump float; uniform vec3 uColor; uniform float uOpacity; uniform float uScanY;
+      varying vec3 vN; varying vec3 vV; varying float vY;
+      void main(){ float rim = 1.0 - abs(dot(normalize(vN), normalize(vV)));
+        float reveal = smoothstep(uScanY - 0.2, uScanY + 0.2, vY);
+        float edge = exp(-pow((vY - uScanY) / 0.08, 2.0));
+        float a = uOpacity * reveal * (0.07 + 0.95 * pow(rim, 2.0)) + edge * uOpacity * 0.8;
+        gl_FragColor = vec4(uColor * (0.55 + 1.1 * rim), a); }`;
+    const pancFS = `precision highp float; uniform float uOpacity; uniform float uScanY; uniform float uGlow;
+      varying vec3 vN; varying vec3 vV; varying vec3 vW; varying float vY;
+      ${NOISE}
+      void main(){
+        vec3 n = normalize(vN), v = normalize(vV);
+        if (!gl_FrontFacing) n = -n;                               // kaynak modelde ters yüzler var
+        float f1, f2, id; worley(vW * 26.0, f1, f2, id);
+        float border = smoothstep(0.0, 0.22, f2 - f1);             // lobül sınırları (yumuşak)
+        float g1, g2, gid; worley(vW * 95.0, g1, g2, gid);          // asinus ölçeği ince doku
+        float fine = 0.85 + 0.15 * smoothstep(0.0, 0.25, g2 - g1);
+        vec3 tissue = mix(vec3(0.91, 0.64, 0.54), vec3(0.97, 0.74, 0.62), id);   // somon / pembe-ten
+        vec3 L = normalize(vec3(-0.35, 0.65, 0.68));
+        float diff = 0.38 + 0.62 * max(dot(n, L), 0.0);
+        float spec = pow(max(dot(reflect(-L, n), v), 0.0), 24.0) * 0.18;
+        vec3 col = tissue * diff * mix(0.68, 1.0, border) * fine + spec;
+        float rim = 1.0 - abs(dot(n, v));
+        col += vec3(1.0, 0.5, 0.28) * (pow(rim, 3.0) * 0.55 + 0.04) * uGlow;
+        float reveal = smoothstep(uScanY - 0.2, uScanY + 0.2, vY);
+        gl_FragColor = vec4(col, uOpacity * reveal); }`;
+    const pancVS = `varying vec3 vN; varying vec3 vV; varying vec3 vW; varying float vY;
+      void main(){ vec4 w = modelMatrix * vec4(position, 1.0); vec4 mv = viewMatrix * w; vN = normalize(normalMatrix * normal);
+        vV = normalize(-mv.xyz); vW = w.xyz; vY = w.y; gl_Position = projectionMatrix * mv; }`;
+    for (const d of ANAT.meshes) {
+      const geo = new THREE.BufferGeometry();
+      geo.setAttribute('position', new THREE.BufferAttribute(dec(d.v, Float32Array), 3));
+      geo.setIndex(new THREE.BufferAttribute(dec(d.i, Uint32Array), 1));
+      geo.computeVertexNormals();
+      let mat;
+      if (d.kind === 'pancreas') {
+        mat = new THREE.ShaderMaterial({ uniforms: { uOpacity: { value: 0 }, uScanY: { value: 99 }, uGlow: { value: 0 } },
+          vertexShader: pancVS, fragmentShader: pancFS, transparent: true, depthWrite: true, side: THREE.DoubleSide });
+      } else {
+        mat = new THREE.ShaderMaterial({ uniforms: { uColor: { value: new THREE.Color(d.color) }, uOpacity: { value: 0 }, uScanY: { value: 99 } },
+          vertexShader: xrayVS, fragmentShader: xrayFS, transparent: true, depthWrite: false, depthTest: d.kind !== 'duct',
+          side: THREE.DoubleSide, blending: THREE.AdditiveBlending });
+      }
+      const mesh = new THREE.Mesh(geo, mat); mesh.frustumCulled = false; mesh.renderOrder = d.kind === 'pancreas' ? 1 : 2;
+      scene.add(mesh);
+      geo.computeBoundingBox(); const ctr = new THREE.Vector3(); geo.boundingBox.getCenter(ctr);
+      const entry = { mesh, mat, base: d.opacity, kind: d.kind, name: d.name, center: ctr };
+      anat.meshes.push(entry); if (d.kind === 'pancreas') anat.pancreas = entry;
+    }
+    // Organ etiketleri
+    const LABELS = { 'pankreas': 'Pankreas', 'karaciğer': 'Karaciğer', 'mide': 'Mide', 'dalak': 'Dalak', 'onikiparmak bağırsağı': 'Onikiparmak bağırsağı', 'sol böbrek': 'Böbrek' };
+    for (const e of anat.meshes) if (LABELS[e.name]) {
+      const el = document.createElement('div'); el.className = 'olabel' + (e.kind === 'pancreas' ? ' main' : ''); el.textContent = LABELS[e.name];
+      document.body.appendChild(el); anat.labels.push({ el, e });
+    }
+  }
+  // Etiket konumları (organ merkezine göre, sahne birimi = 10 cm)
+  const LABEL_OFF = { 'karaciğer': [-0.55, 0.55, 0.3], 'mide': [0.1, 0.62, 0.3], 'dalak': [0.25, 0.55, 0.3],
+    'onikiparmak bağırsağı': [-0.5, -0.5, 0.25], 'sol böbrek': [0.55, -0.55, 0], 'pankreas': [0.15, -0.5, 0.2] };
+  function updateAnatomy(t) {
+    if (!ANAT) return;
+    const alpha = ss(7, 8.6, t) * (1 - ss(18.3, 19.2, t));
+    const scanY = lerp(6.8, -11, ss(7.6, 11.2, t));
+    const show = alpha > 0.002;
+    anat.skin.visible = show;
+    const su = anat.skin.material.uniforms;
+    su.uAssemble.value = ss(7, 10.4, t); su.uScanY.value = scanY; su.uAlpha.value = alpha;
+    su.uScale.value = partSys.mat.uniforms.uScale.value;
+    const organs = ss(8.4, 10.6, t) * (1 - ss(18.3, 19.2, t));
+    for (const e of anat.meshes) {
+      e.mesh.visible = show;
+      e.mat.uniforms.uScanY.value = scanY;
+      e.mat.uniforms.uOpacity.value = e.base * organs * (e.kind === 'pancreas' ? 1 : 1 - 0.55 * ss(13.5, 16, t));
+      if (e.kind === 'pancreas') e.mat.uniforms.uGlow.value = ss(10.6, 12.6, t) * (0.85 + 0.15 * Math.sin(t * 3.0));
+    }
+    const W = canvas.clientWidth, H = canvas.clientHeight;
+    for (const { el, e } of anat.labels) {
+      const on = e.kind === 'pancreas' ? ss(13.2, 13.9, t) * (1 - ss(16.3, 16.9, t)) : ss(13.4, 14.1, t) * (1 - ss(15.6, 16.2, t));
+      const off = LABEL_OFF[e.name] || [0, 0.3, 0]; v3.copy(e.center); v3.x += off[0]; v3.y += off[1]; v3.z += off[2];
+      v3.project(camera);
+      el.style.left = `${(v3.x * 0.5 + 0.5) * W}px`; el.style.top = `${(-v3.y * 0.5 + 0.5) * H}px`;
+      el.style.opacity = (v3.z < 1 ? on : 0).toFixed(3);
+    }
+  }
+
   const composer = new THREE.EffectComposer(renderer);
   composer.addPass(new THREE.RenderPass(scene, camera));
   const bloom = new THREE.UnrealBloomPass(new THREE.Vector2(1920, 1080), 1.05, 0.55, 0.12);
@@ -360,10 +517,13 @@ body.render #replay { display: none; }
 
     const [cp, cl] = camAt(t);
     camera.position.set(cp[0], cp[1], cp[2]); camera.lookAt(cl[0], cl[1], cl[2]);
-    scene.fog.density = t > 20.5 && t < 54 ? 0.045 : 0.02;
+    updateAnatomy(t);
+    scene.fog.density = t > 20.5 && t < 54 ? 0.045 : (t < 17 ? 0.006 : 0.02);
     const inside = t > 20.8 && t < 53.9;
-    bloom.threshold = inside ? 0.5 : 0.12;
-    bloom.strength = (inside ? 0.45 : 0.95) + 0.6 * Math.exp(-(((t - 20.4) / 0.4) ** 2)) + 0.5 * Math.exp(-(((t - 64.6) / 0.6) ** 2)) + (t > 17 && t < 20.5 ? 0.4 : 0);
+    // Gövde → dalış: kamera pankreasa girene kadar ışıma yumuşakça artar (lobül dokusu görünür kalsın)
+    const bodyScene = t >= 7 && t < 20.5, enter = ss(17.7, 18.5, t);
+    bloom.threshold = inside ? 0.5 : (bodyScene ? lerp(0.86, 0.12, enter) : 0.12);
+    bloom.strength = (inside ? 0.45 : (bodyScene ? lerp(0.6, 0.95, enter) : 0.95)) + 0.6 * Math.exp(-(((t - 20.4) / 0.4) ** 2)) + 0.5 * Math.exp(-(((t - 64.6) / 0.6) ** 2)) + (t > 17 && t < 20.5 ? 0.4 * enter : 0);
     composer.render();
 
     const fl = 0.95 * Math.exp(-(((t - 20.4) / 0.16) ** 2)) + 0.7 * Math.exp(-(((t - 54.0) / 0.14) ** 2));

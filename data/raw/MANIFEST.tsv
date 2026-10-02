@@ -1,4 +1,7 @@
 file	url	bytes	sha256	downloaded_utc
+bodyparts3d/BodyParts3D_3.0_obj_99.zip	https://dbarchive.biosciencedbc.jp/data/bodyparts3d/20110915/BodyParts3D_3.0_obj_99.zip	134113358	2125f6d761b14ead4ee64f71713f56f3f0f29982693ff20aac63474470cb92f4	2026-10-02T18:56:55+00:00
+bodyparts3d/coordinate_system.png	https://dbarchive.biosciencedbc.jp/data/bodyparts3d/20110915/coordinate_system.png	28425	338736275c11eac8c89531fdc14193c9a8adf5baab674033d9d89259f152a5f6	2026-10-02T18:56:55+00:00
+bodyparts3d/parts_list_e.txt	https://dbarchive.biosciencedbc.jp/data/bodyparts3d/20110915/parts_list_e.txt	49357	824a34ed939a53375037d0d68b88ad2b63b1f0ae15a585632af2a63c2ab2e4af	2026-10-02T18:56:55+00:00
 cptac_pdac/clinical_table_140.tsv	https://www.linkedomics.org/data_download/CPTAC-PDAC/clinical_table_140.tsv	65283	f313d026b50d55adefb327e4f953a8e32c43e7a7f99b0e3575a7464878276223	2026-09-30T12:55:47+00:00
 cptac_pdac/mRNA_RSEM_UQ_log2_Normal.cct	https://www.linkedomics.org/data_download/CPTAC-PDAC/mRNA_RSEM_UQ_log2_Normal.cct	8444836	1fdd4be99afbfd8c99baf6c39aafd0da758781f1918458839c345476613ba540	2026-09-30T12:56:01+00:00
 cptac_pdac/mRNA_RSEM_UQ_log2_Tumor.cct	https://www.linkedomics.org/data_download/CPTAC-PDAC/mRNA_RSEM_UQ_log2_Tumor.cct	55217164	a1d4c16bd6ae65183ba108efdbc39241a829b9c47941cc853d434d9671cb7809	2026-09-30T12:55:52+00:00

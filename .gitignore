@@ -43,3 +43,7 @@ sunum/render/kapanis_render.log
 # Poster çıktıları (üniversite logolu şablon içerir)
 sunum/poster/
 
+
+# BodyParts3D tÃ¼revi anatomi verisi (scripts/wp7_03_anatomy_assets.py ile Ã¼retilir)
+sunum/assets/
+
