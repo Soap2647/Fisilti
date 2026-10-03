@@ -47,3 +47,6 @@ sunum/poster/
 # BodyParts3D türevi anatomi verisi (scripts/wp7_03_anatomy_assets.py ile üretilir)
 sunum/assets/
 
+
+# Teslim paketi (sunum + video + poster)
+sunum/teslim/
