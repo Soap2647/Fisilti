@@ -1,6 +1,6 @@
 """WP7-02: Kastamonu AR-GE poster şablonunu (70×100 cm) proje sonuçlarıyla doldurur.
 
-Girdi : sunum/poster/sablon.pptx (kirmizi-kastamonu-poster-sablon-1.ppt'nin .pptx kopyası)
+Girdi : sunum/poster/sablon_v2.pptx ("güncel kirmizi-kastamonu-poster-sablon-1).ppt"nin .pptx kopyası)
 Çıktı : sunum/poster/Fisilti_Poster.pptx + poster grafikleri (sunum/poster/img/)
 Şablon kuralları: Times New Roman, gövde 28 pt, iki yana yaslı, tek satır aralığı; başlık 40 pt kalın büyük harf.
 Tüm sayılar results/ tablolarından okunur. Bilinmeyen bilgiler PLACEHOLDER sözlüğünde, kırmızı köşeli parantezle.
@@ -205,17 +205,17 @@ def main() -> None:
     p1 = serum[serum.comparison == "P1_PDAC_vs_saglikli"].set_index("cohort").auc
     best = tab[tab.config == "blood"].groupby("view").auc.max()
 
-    prs = Presentation(POSTER / "sablon.pptx")
+    prs = Presentation(POSTER / "sablon_v2.pptx")
     s = prs.slides[0]
     sh = list(s.shapes)
 
     # --- Başlık alanı
     write(sh[6], [P(B("FISILTI: ERKEN EVRE PANKREAS KANSERİ İÇİN KAN TABANLI BİYOBELİRTEÇ KEŞFİ"),
-                    size=40, align=PP_ALIGN.CENTER, space_after=0)], top=336, height=96)
+                    size=40, align=PP_ALIGN.CENTER, space_after=0)], top=300, height=100)
     sh[6].left = Pt(440); sh[6].width = Pt(1140)
     write(sh[7], [P(B("Mert Yasin YILMAZ"), (" · Kastamonu Üniversitesi, ", {}), ph("bolum", "Fakülte / Bölüm"), size=26, align=PP_ALIGN.CENTER, space_after=0),
                   P(("Danışman: ", {}), ph("danisman", "Unvan Ad SOYAD"), size=24, align=PP_ALIGN.CENTER, space_after=0)],
-          top=440, height=80)
+          top=418, height=80)
     sh[7].left = Pt(440); sh[7].width = Pt(1140)
     write(sh[14], [P(B("Tematik Alan-Alt Alan"), size=24, align=PP_ALIGN.CENTER, space_after=2),
                    P(ph("tematik", "Alan / Alt alan"), size=22, align=PP_ALIGN.CENTER, space_after=0)])
@@ -260,9 +260,12 @@ def main() -> None:
 
     # --- Amaç (kutu: x 61, y 1432, w 934, h 661)
     write(sh[10], [heading("AMAÇ"),
-                   P(B("Ana amaç: "), "erken evre PDAC'ı (Evre I–II) kan örneğinden yakalayabilecek, ELISA / RT-qPCR ile "
-                     "ölçülebilir 5–10 belirteçlik bir panel keşfetmek ve bağımsız kohortlarda sınamak.")],
-          top=1458, height=190, box=(61, 934))
+                   P("• ", B("Amaç: "), "erken evre PDAC'ı (Evre I–II) kan örneğinden yakalayabilecek, ELISA / RT-qPCR ile "
+                     "ölçülebilir 5–10 belirteçlik bir panel keşfetmek.", space_after=2),
+                   P("• ", B("Hedef 1: "), "dört omik katmanı ve yedi kohortu bütünleştirip yapay zekâ ile aday belirteçleri sıralamak.", space_after=2),
+                   P("• ", B("Hedef 2: "), "kanda ölçülebilir adaylardan kilitli, ön-kayıtlı bir panel oluşturmak.", space_after=2),
+                   P("• ", B("Beklenen başarı ölçütü: "), "panelin modelin hiç görmediği bağımsız kohortlarda tümörü ayırması (AUC), erken evre dahil.", space_after=2)],
+          top=1458, height=330, box=(61, 934))
     goals = [["Başvurudaki hedef", "Sonuç", "Durum"],
              ["Çoklu kohort veri entegrasyonu", "7 kohort, 4 omik; 6 veri tuzağı yakalandı", ("Karşılandı", RGBColor(0x1B, 0x6B, 0x2F), True)],
              ["MOFA+ ile ortak faktörler", "13 faktör; baskın eksen asiner doku kaybı", ("Karşılandı", RGBColor(0x1B, 0x6B, 0x2F), True)],
@@ -270,7 +273,7 @@ def main() -> None:
              ["Yorumlanabilirlik (SHAP, yolaklar)", "KRAS, EMT, p53; bilinen belirteçler bulundu", ("Karşılandı", RGBColor(0x1B, 0x6B, 0x2F), True)],
              ["5–10 belirteçlik panel", "5 miRNA + 8 protein, kilitli", ("Karşılandı", RGBColor(0x1B, 0x6B, 0x2F), True)],
              ["Kohortlar arası doğrulama", f"Doku: AUC {f2(t1.min())}–{f2(t1.max())}; serum miRNA: doğrulanamadı", ("Kısmen", RGBColor(0xB0, 0x5A, 0x00), True)]]
-    add_table(s, goals, 84, 1655, 890, [0.36, 0.47, 0.17], size=20, row_h=46)
+    add_table(s, goals, 84, 1800, 890, [0.36, 0.47, 0.17], size=18, row_h=40)
 
     # --- Uygulama Alanı ve Hedef Grubu (kutu: x 1046, y 1428, w 879, h 661)
     write(sh[18], [heading("Projenin Uygulama Alanı ve Hedef Grubu"),
