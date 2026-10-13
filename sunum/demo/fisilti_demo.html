@@ -1,0 +1,421 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Fısıltı · Canlı Test İstasyonu</title>
+<style>
+:root {
+  --bg: #04070F; --panel: #0B1222; --panel2: #101a30; --line: #1E2A44; --ink: #F2EDE3; --muted: #8C97AD;
+  --coral: #FF7A59; --coral2: #D9693F; --gold: #FFD08A; --blue: #6FA8FF; --green: #5BD6A0; --red: #FF5D6C;
+  --serif: Georgia, 'Times New Roman', serif; --sans: 'Segoe UI', system-ui, -apple-system, Arial, sans-serif;
+  --mono: Consolas, 'Cascadia Mono', ui-monospace, monospace;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; }
+body { background: var(--bg); color: var(--ink); font-family: var(--sans); overflow: hidden; }
+#bgfx { position: fixed; inset: 0; z-index: 0; }
+.app { position: relative; z-index: 1; height: 100vh; display: grid; grid-template-rows: auto auto 1fr auto; padding: 22px 34px 16px; gap: 16px; }
+header { display: flex; align-items: center; gap: 22px; }
+.logo { font-family: var(--serif); font-size: 40px; font-weight: 700; letter-spacing: 0.5px; }
+.logo span { color: var(--coral); }
+.sub { color: var(--muted); font-size: 15px; letter-spacing: 3px; text-transform: uppercase; }
+.live { margin-left: auto; display: flex; align-items: center; gap: 10px; font-family: var(--mono); font-size: 14px; color: var(--muted); }
+.dot { width: 10px; height: 10px; border-radius: 50%; background: var(--red); box-shadow: 0 0 12px var(--red); animation: pulse 1.4s infinite; }
+@keyframes pulse { 50% { opacity: 0.25; } }
+.bar { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+.chip, .tab, .btn { border: 1px solid var(--line); background: var(--panel); color: var(--ink); border-radius: 999px; padding: 9px 18px; font: 500 15px var(--sans); cursor: pointer; transition: all .2s; }
+.chip:hover, .tab:hover, .btn:hover { border-color: var(--coral); }
+.chip.on { background: linear-gradient(135deg, #2a1a1a, #3a1e16); border-color: var(--coral); color: #fff; box-shadow: 0 0 18px rgba(255,122,89,.25); }
+.chip small { color: var(--muted); margin-left: 6px; }
+.tab.on { background: var(--coral2); border-color: var(--coral); color: #fff; }
+.sep { width: 1px; height: 28px; background: var(--line); margin: 0 6px; }
+.btn.primary { background: linear-gradient(135deg, var(--coral), var(--coral2)); border: none; color: #fff; font-weight: 700; padding: 12px 26px; font-size: 17px; box-shadow: 0 6px 24px rgba(255,122,89,.35); }
+.btn.primary:hover { transform: translateY(-1px); box-shadow: 0 10px 32px rgba(255,122,89,.5); }
+.btn:disabled { opacity: .4; cursor: default; transform: none; }
+main { position: relative; min-height: 0; }
+.view { position: absolute; inset: 0; display: none; }
+.view.on { display: grid; animation: fadein .5s ease; }
+@keyframes fadein { from { opacity: 0; transform: translateY(8px); } }
+.card { background: linear-gradient(180deg, rgba(16,26,48,.92), rgba(11,18,34,.92)); border: 1px solid var(--line); border-radius: 20px; padding: 22px 26px; position: relative; overflow: hidden; }
+.card h3 { font: 600 14px var(--sans); letter-spacing: 3px; text-transform: uppercase; color: var(--muted); margin-bottom: 14px; }
+/* --- Tek hasta --- */
+#v1 { grid-template-columns: 300px 1fr 400px; grid-template-rows: minmax(0,1fr); gap: 18px; }
+.tube { display: flex; flex-direction: column; align-items: center; gap: 12px; justify-content: center; }
+.sid { font-family: var(--mono); font-size: 30px; color: var(--gold); }
+.vial { width: 80px; height: 170px; border: 3px solid #9fb1d6; border-top: none; border-radius: 0 0 45px 45px; position: relative; overflow: hidden; background: rgba(255,255,255,.03); }
+.vial::before { content: ''; position: absolute; top: -3px; left: -10px; right: -10px; height: 14px; background: #9fb1d6; border-radius: 4px; }
+.fluid { position: absolute; left: 0; right: 0; bottom: 0; height: 0%; background: linear-gradient(180deg, #ff9a7a, #c0392b 60%, #7d1f1a); transition: height 1.2s cubic-bezier(.2,.8,.2,1); }
+.fluid::after { content: ''; position: absolute; inset: 0; background: repeating-linear-gradient(0deg, transparent 0 10px, rgba(255,255,255,.06) 10px 12px); }
+.bubble { position: absolute; width: 8px; height: 8px; border-radius: 50%; background: rgba(255,255,255,.5); bottom: 0; animation: rise 2.4s infinite ease-in; opacity: 0; }
+@keyframes rise { 0% { transform: translateY(0); opacity: 0; } 20% { opacity: .8; } 100% { transform: translateY(-200px); opacity: 0; } }
+.meta { color: var(--muted); font-size: 14px; text-align: center; line-height: 1.5; }
+.score-tally { display: flex; gap: 18px; font-family: var(--mono); }
+.score-tally b { display: block; font-size: 34px; color: var(--ink); font-family: var(--serif); }
+.score-tally div { text-align: center; color: var(--muted); font-size: 12px; letter-spacing: 2px; }
+.genes { display: grid; grid-template-rows: repeat(8, minmax(0,1fr)) auto; gap: 6px; height: calc(100% - 34px); }
+.g { display: grid; grid-template-columns: 150px 1fr 70px; align-items: center; gap: 14px; }
+.g .nm { font: 700 20px var(--mono); }
+.g .nm small { display: block; font: 400 12px var(--sans); color: var(--muted); margin-top: 2px; }
+.track { position: relative; height: 26px; background: rgba(255,255,255,.04); border-radius: 13px; }
+.track::before { content: ''; position: absolute; left: 50%; top: -6px; bottom: -6px; width: 2px; background: #3a4766; }
+.fill { position: absolute; top: 3px; bottom: 3px; border-radius: 10px; left: 50%; width: 0; transition: all .7s cubic-bezier(.2,.9,.25,1.2); }
+.fill.up { background: linear-gradient(90deg, #ff9a7a, var(--coral)); box-shadow: 0 0 14px rgba(255,122,89,.6); }
+.fill.dn { background: linear-gradient(270deg, #9cc3ff, var(--blue)); box-shadow: 0 0 14px rgba(111,168,255,.5); }
+.g .v { font: 600 18px var(--mono); text-align: right; }
+.axis { display: grid; grid-template-columns: 150px 1fr 70px; gap: 14px; color: var(--muted); font-size: 12px; margin-top: 6px; }
+.axis div:nth-child(2) { display: flex; justify-content: space-between; }
+.right { display: grid; grid-template-rows: minmax(0,1fr) auto; gap: 16px; min-height: 0; }
+.right .card:first-child { display: flex; flex-direction: column; }
+.right .card:first-child canvas { flex: 1; min-height: 0; }
+#gauge { width: 100%; height: 100%; }
+.verdict { text-align: center; font: 700 30px var(--serif); min-height: 40px; letter-spacing: 1px; }
+.reveal { perspective: 900px; height: 104px; }
+.flip { position: relative; width: 100%; height: 100%; transition: transform .8s cubic-bezier(.3,1.4,.4,1); transform-style: preserve-3d; }
+.flip.open { transform: rotateY(180deg); }
+.face { position: absolute; inset: 0; backface-visibility: hidden; border-radius: 16px; display: flex; flex-direction: column; align-items: center; justify-content: center; border: 1px dashed #3a4766; color: var(--muted); font-size: 16px; }
+.face.back { transform: rotateY(180deg); border: 2px solid; font: 700 26px var(--serif); gap: 4px; }
+.face.back small { font: 400 15px var(--sans); color: var(--muted); }
+.face.back.ok { border-color: var(--green); color: var(--green); background: rgba(91,214,160,.08); }
+.face.back.no { border-color: var(--red); color: var(--red); background: rgba(255,93,108,.08); }
+/* --- Kohort / yarış --- */
+#v2 { grid-template-columns: 1.35fr 1fr; grid-template-rows: minmax(0,1fr) auto; gap: 18px; }
+#v3 { grid-template-columns: 1fr 360px; grid-template-rows: minmax(0,1fr); gap: 18px; }
+canvas.plot { width: 100%; height: calc(100% - 34px); display: block; }
+.stats { display: grid; grid-template-columns: repeat(5, 1fr); gap: 14px; grid-column: 1 / -1; }
+.stat { background: var(--panel); border: 1px solid var(--line); border-radius: 16px; padding: 14px 18px; }
+.stat b { display: block; font: 700 40px var(--serif); }
+.stat span { color: var(--muted); font-size: 13px; letter-spacing: 2px; text-transform: uppercase; }
+.big { font: 700 62px var(--serif); line-height: 1; white-space: nowrap; }
+.side p { color: var(--muted); font-size: 16px; line-height: 1.55; margin-top: 12px; }
+.side p b { color: var(--ink); }
+footer { display: flex; gap: 18px; align-items: center; color: var(--muted); font-size: 13px; }
+footer .keys { margin-left: auto; font-family: var(--mono); }
+kbd { border: 1px solid var(--line); border-radius: 5px; padding: 1px 6px; background: var(--panel); color: var(--ink); }
+.flash { position: fixed; inset: 0; pointer-events: none; z-index: 5; opacity: 0; }
+.confetti { position: fixed; z-index: 6; pointer-events: none; width: 9px; height: 14px; border-radius: 2px; }
+</style>
+</head>
+<body>
+<canvas id="bgfx"></canvas>
+<div class="flash" id="flash"></div>
+<div class="app">
+  <header>
+    <div class="logo">Fısıltı<span>.</span></div>
+    <div class="sub">Canlı test istasyonu · 8 proteinlik aday panel</div>
+    <div class="live"><div class="dot"></div><span id="clock"></span></div>
+  </header>
+  <div class="bar">
+    <div id="cohorts" class="bar"></div>
+    <div class="sep"></div>
+    <button class="tab on" data-v="v1">① Tek hasta</button>
+    <button class="tab" data-v="v2">② Tüm kohortu tara</button>
+    <button class="tab" data-v="v3">③ Rastgele panellerle yarış</button>
+    <div class="sep"></div>
+    <button class="btn" id="mute" title="Ses (M)">🔊 Ses</button>
+  </div>
+  <main>
+    <!-- 1: tek hasta -->
+    <section class="view on" id="v1">
+      <div class="card tube">
+        <h3 style="align-self:flex-start">Örnek</h3>
+        <div class="sid" id="sid">#—</div>
+        <div class="vial"><div class="fluid" id="fluid"></div><div id="bubbles"></div></div>
+        <div class="meta" id="smeta">Kimliksiz doku örneği<br>Model bu kohortu hiç görmedi</div>
+        <button class="btn primary" id="draw">Yeni örnek çek <kbd>Boşluk</kbd></button>
+        <div class="score-tally"><div><b id="tOk">0</b>DOĞRU</div><div><b id="tAll">0</b>TOPLAM</div><div><b id="tPct">—</b>İSABET</div></div>
+      </div>
+      <div class="card">
+        <h3>8 proteinin ifadesi · kohort ortalamasına göre (z-skor)</h3>
+        <div class="genes" id="genes"></div>
+      </div>
+      <div class="right">
+        <div class="card"><h3>Fısıltı skoru</h3><canvas id="gauge"></canvas></div>
+        <div class="card">
+          <div class="verdict" id="verdict">&nbsp;</div>
+          <div class="reveal"><div class="flip" id="flip">
+            <div class="face front">Gerçek tanı gizli</div>
+            <div class="face back" id="truth"></div>
+          </div></div>
+        </div>
+      </div>
+    </section>
+    <!-- 2: kohort tarama -->
+    <section class="view" id="v2">
+      <div class="card"><h3>Her nokta bir örnek · sağa gittikçe skor yüksek</h3><canvas class="plot" id="swarm"></canvas></div>
+      <div class="card"><h3>ROC eğrisi · canlı</h3><canvas class="plot" id="roc"></canvas></div>
+      <div class="stats">
+        <div class="stat" style="display:flex;align-items:center;justify-content:center"><button class="btn primary" id="scanGo">Taramayı başlat <kbd>Boşluk</kbd></button></div>
+        <div class="stat"><b id="sN">0</b><span>taranan örnek</span></div>
+        <div class="stat"><b id="sAuc" style="color:var(--coral)">—</b><span>AUC (0,5 = yazı tura)</span></div>
+        <div class="stat"><b id="sSens" style="color:var(--green)">—</b><span>tümör yakalama (duyarlılık)</span></div>
+        <div class="stat"><b id="sSpec" style="color:var(--blue)">—</b><span>normali doğru bilme (özgüllük)</span></div>
+      </div>
+    </section>
+    <!-- 3: yarış -->
+    <section class="view" id="v3">
+      <div class="card"><h3>Rastgele seçilmiş 8 genlik 2000 panel vs Fısıltı paneli</h3><canvas class="plot" id="race"></canvas></div>
+      <div class="card side">
+        <h3>Sonuç</h3>
+        <div class="big" id="rWin">—</div>
+        <p id="rTxt">Aynı sayıda, aynı yöntemle skorlanmış rastgele gen panelleri bu kohortta ne kadar iyi? Başlat'a bas.</p>
+        <p style="margin-top:22px"><button class="btn primary" id="raceGo">Yarışı başlat <kbd>Boşluk</kbd></button></p>
+      </div>
+    </section>
+  </main>
+  <footer>
+    <span>Doku verisi (GEO, bağımsız kohort) · kan testi değildir · skor = 8 proteinin z-skor ortalaması, eşik etiket görülmeden 0'da sabit · panel 30.09.2026'da kilitlendi</span>
+    <span class="keys"><kbd>1</kbd><kbd>2</kbd><kbd>3</kbd> görünüm · <kbd>Q</kbd><kbd>W</kbd><kbd>E</kbd> kohort · <kbd>Boşluk</kbd> çalıştır · <kbd>M</kbd> ses</span>
+  </footer>
+</div>
+<script src="data.js"></script>
+<script>
+(() => {
+  const D = window.FISILTI_DEMO;
+  const NOTE = { SULF1: 'sülfataz · tümör stroması', LGALS3BP: 'salgılanan glikoprotein', NMI: 'interferon yanıtı', LAMC2: 'laminin γ2 · invazyon',
+    THBS1: 'trombospondin-1', CD55: 'kompleman düzenleyici', GLA: 'α-galaktozidaz', SERPINB5: 'maspin' };
+  const $ = id => document.getElementById(id);
+  const fmt = (x, d = 2) => x.toFixed(d).replace('.', ',');
+  const ss = (a, b, x) => { const t = Math.min(1, Math.max(0, (x - a) / (b - a))); return t * t * (3 - 2 * t); };
+  const sleep = ms => new Promise(r => setTimeout(r, ms));
+  const tween = (ms, fn) => new Promise(res => { const t0 = performance.now(); const step = now => { const u = Math.min(1, (now - t0) / ms); fn(u); u < 1 ? requestAnimationFrame(step) : res(); }; requestAnimationFrame(step); });
+  const ease = u => 1 - Math.pow(1 - u, 3);
+  let C = D.cohorts[1], view = 'v1', busy = false;
+
+  // ---------- Ses (WebAudio, prosedürel) ----------
+  let AC = null, muted = false;
+  const ac = () => (AC ||= new (window.AudioContext || window.webkitAudioContext)());
+  function tone(f, dur = .12, type = 'sine', vol = .12, slide = 0, delay = 0) {
+    if (muted) return; const a = ac(), t = a.currentTime + delay, o = a.createOscillator(), g = a.createGain();
+    o.type = type; o.frequency.setValueAtTime(f, t); if (slide) o.frequency.exponentialRampToValueAtTime(Math.max(30, f + slide), t + dur);
+    g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(vol, t + .01); g.gain.exponentialRampToValueAtTime(.0001, t + dur);
+    o.connect(g).connect(a.destination); o.start(t); o.stop(t + dur + .05);
+  }
+  function whoosh(dur = .6, vol = .08) {
+    if (muted) return; const a = ac(), n = a.sampleRate * dur, b = a.createBuffer(1, n, a.sampleRate), d = b.getChannelData(0);
+    for (let i = 0; i < n; i++) d[i] = (Math.random() * 2 - 1) * Math.sin(Math.PI * i / n);
+    const s = a.createBufferSource(), f = a.createBiquadFilter(), g = a.createGain(); s.buffer = b; f.type = 'bandpass';
+    f.frequency.setValueAtTime(300, a.currentTime); f.frequency.exponentialRampToValueAtTime(3000, a.currentTime + dur); g.gain.value = vol;
+    s.connect(f).connect(g).connect(a.destination); s.start();
+  }
+  const chime = () => [523, 659, 784, 1047].forEach((f, i) => tone(f, .5, 'triangle', .09, 0, i * .07));
+  const buzz = () => { tone(140, .35, 'sawtooth', .06, -60); tone(110, .4, 'square', .03, -40, .05); };
+  $('mute').onclick = () => { muted = !muted; $('mute').textContent = muted ? '🔇 Sessiz' : '🔊 Ses'; };
+
+  // ---------- Arka plan parçacıkları ----------
+  const bg = $('bgfx'), bx = bg.getContext('2d'); let P = [];
+  function bgResize() { bg.width = innerWidth * devicePixelRatio; bg.height = innerHeight * devicePixelRatio; P = Array.from({ length: 140 }, () => ({ x: Math.random(), y: Math.random(), r: Math.random() * 1.8 + .4, v: Math.random() * .00025 + .00005, p: Math.random() * 6.28, c: Math.random() < .18 })); }
+  function bgLoop(t) {
+    bx.clearRect(0, 0, bg.width, bg.height);
+    const g = bx.createRadialGradient(bg.width * .75, bg.height * .1, 0, bg.width * .75, bg.height * .1, bg.width * .7);
+    g.addColorStop(0, 'rgba(217,105,63,0.10)'); g.addColorStop(1, 'rgba(4,7,15,0)'); bx.fillStyle = g; bx.fillRect(0, 0, bg.width, bg.height);
+    for (const p of P) { p.y -= p.v; if (p.y < -.02) p.y = 1.02; const a = .25 + .25 * Math.sin(t * .001 + p.p);
+      bx.fillStyle = p.c ? `rgba(255,208,138,${a})` : `rgba(160,180,220,${a * .7})`; bx.beginPath(); bx.arc(p.x * bg.width, p.y * bg.height, p.r * devicePixelRatio, 0, 6.28); bx.fill(); }
+    requestAnimationFrame(bgLoop);
+  }
+  bgResize(); addEventListener('resize', () => { bgResize(); fitAll(); }); requestAnimationFrame(bgLoop);
+  setInterval(() => $('clock').textContent = new Date().toLocaleTimeString('tr-TR') + ' · CANLI', 1000);
+
+  function flash(color, a = .35) { const f = $('flash'); f.style.background = color; f.animate([{ opacity: a }, { opacity: 0 }], { duration: 600, easing: 'ease-out' }); }
+  function confetti() {
+    const cols = ['#FF7A59', '#FFD08A', '#5BD6A0', '#6FA8FF', '#F2EDE3'];
+    for (let i = 0; i < 70; i++) { const e = document.createElement('div'); e.className = 'confetti'; e.style.background = cols[i % 5];
+      e.style.left = (innerWidth * (.55 + Math.random() * .4)) + 'px'; e.style.top = '-20px'; document.body.appendChild(e);
+      e.animate([{ transform: 'translate(0,0) rotate(0)' }, { transform: `translate(${(Math.random() - .5) * 400}px, ${innerHeight + 40}px) rotate(${Math.random() * 900}deg)` }],
+        { duration: 1800 + Math.random() * 1400, easing: 'cubic-bezier(.2,.6,.4,1)' }).onfinish = () => e.remove(); }
+  }
+
+  // ---------- Kohort seçimi ----------
+  function renderCohorts() {
+    $('cohorts').innerHTML = '';
+    D.cohorts.forEach((c, i) => { const b = document.createElement('button'); b.className = 'chip' + (c === C ? ' on' : '');
+      b.innerHTML = `${c.id}<small>${c.n_pdac} tümör · ${c.n_normal} normal</small>`; b.title = c.desc; b.onclick = () => setCohort(i); $('cohorts').appendChild(b); });
+  }
+  function setCohort(i) { if (busy) return; C = D.cohorts[i]; renderCohorts(); tone(660, .08, 'triangle', .08); resetSingle(); resetScan(); resetRace(); }
+
+  // ---------- Görünümler ----------
+  document.querySelectorAll('.tab').forEach(t => t.onclick = () => setView(t.dataset.v));
+  function setView(v) { if (busy) return; view = v; document.querySelectorAll('.tab').forEach(t => t.classList.toggle('on', t.dataset.v === v));
+    document.querySelectorAll('.view').forEach(s => s.classList.toggle('on', s.id === v)); whoosh(.35, .05); requestAnimationFrame(fitAll); }
+
+  // ---------- 1: Tek hasta ----------
+  const geneEls = D.genes.map(g => { const el = document.createElement('div'); el.className = 'g';
+    el.innerHTML = `<div class="nm">${g}<small>${NOTE[g] || ''}</small></div><div class="track"><div class="fill"></div></div><div class="v">—</div>`; $('genes').appendChild(el); return el; });
+  { const ax = document.createElement('div'); ax.className = 'axis'; ax.innerHTML = '<div></div><div><span>−3 · düşük</span><span>0</span><span>yüksek · +3</span></div><div></div>'; $('genes').appendChild(ax); }
+  for (let i = 0; i < 7; i++) { const b = document.createElement('div'); b.className = 'bubble'; b.style.left = (10 + i * 11) + 'px'; b.style.animationDelay = (i * .33) + 's'; $('bubbles').appendChild(b); }
+  let tally = { ok: 0, all: 0 }, gaugeVal = 0, gaugeShown = false, lastIdx = -1;
+  const gc = $('gauge'), gx = gc.getContext('2d');
+  function drawGauge(v, show) {
+    const w = gc.width, h = gc.height, cx = w / 2, cy = h * .66, R = Math.min(w * .42, h * .58), A0 = Math.PI * .8, A1 = Math.PI * 2.2;
+    gx.clearRect(0, 0, w, h); gx.lineCap = 'round';
+    const lin = s => A0 + (A1 - A0) * Math.min(1, Math.max(0, (s + 2) / 4));
+    for (let i = 0; i < 60; i++) { const s = -2 + 4 * i / 59, a = lin(s); gx.strokeStyle = s < 0 ? `rgba(111,168,255,${.25 + .5 * (-s / 2)})` : `rgba(255,122,89,${.25 + .6 * (s / 2)})`;
+      gx.lineWidth = R * .16; gx.beginPath(); gx.arc(cx, cy, R, a, a + (A1 - A0) / 62); gx.stroke(); }
+    const a0 = lin(0); gx.strokeStyle = '#F2EDE3'; gx.lineWidth = 3; gx.beginPath(); gx.moveTo(cx + Math.cos(a0) * R * .7, cy + Math.sin(a0) * R * .7); gx.lineTo(cx + Math.cos(a0) * R * 1.12, cy + Math.sin(a0) * R * 1.12); gx.stroke();
+    gx.fillStyle = '#8C97AD'; gx.font = `${Math.round(R * .085)}px Segoe UI`; gx.textAlign = 'center';
+    gx.fillText('eşik', cx + Math.cos(a0) * R * 1.25, cy + Math.sin(a0) * R * 1.25);
+    gx.fillText('NORMAL', cx + Math.cos(A0) * R, cy + Math.sin(A0) * R + R * .26);
+    gx.fillText('TÜMÖR', cx + Math.cos(A1) * R, cy + Math.sin(A1) * R + R * .26);
+    if (show) { const a = lin(v); gx.save(); gx.shadowColor = v > 0 ? '#FF7A59' : '#6FA8FF'; gx.shadowBlur = 24; gx.strokeStyle = '#fff'; gx.lineWidth = R * .035;
+      gx.beginPath(); gx.moveTo(cx, cy); gx.lineTo(cx + Math.cos(a) * R * .92, cy + Math.sin(a) * R * .92); gx.stroke(); gx.restore();
+      gx.fillStyle = '#fff'; gx.beginPath(); gx.arc(cx, cy, R * .07, 0, 6.28); gx.fill();
+      gx.fillStyle = v > 0 ? '#FF7A59' : '#6FA8FF'; gx.font = `700 ${Math.round(R * .3)}px Georgia`; gx.fillText((v >= 0 ? '+' : '') + fmt(v), cx, cy + R * .45); }
+  }
+  function resetSingle() { geneEls.forEach(el => { const f = el.querySelector('.fill'); f.style.width = '0'; f.style.left = '50%'; el.querySelector('.v').textContent = '—'; });
+    $('verdict').innerHTML = '&nbsp;'; $('flip').classList.remove('open'); $('sid').textContent = '#—'; $('fluid').style.height = '0%'; gaugeShown = false; drawGauge(0, false);
+    $('smeta').innerHTML = `${C.id} · ${C.desc}<br>Model bu kohortu hiç görmedi`; }
+  async function drawSample() {
+    if (busy) return; busy = true; $('draw').disabled = true; resetSingle();
+    let i; do { i = Math.floor(Math.random() * C.samples.length); } while (i === lastIdx && C.samples.length > 1); lastIdx = i;
+    const S = C.samples[i];
+    whoosh(.7, .07); $('fluid').style.height = '78%';
+    for (let k = 0; k < 10; k++) { $('sid').textContent = '#' + String(Math.floor(Math.random() * 999)).padStart(3, '0'); tone(900 + k * 40, .03, 'square', .03); await sleep(55); }
+    $('sid').textContent = '#' + String(i + 1).padStart(3, '0');
+    await sleep(300);
+    for (let k = 0; k < D.genes.length; k++) {
+      const z = Math.max(-3, Math.min(3, S.z[k])), el = geneEls[k], f = el.querySelector('.fill'), pct = Math.abs(z) / 3 * 50;
+      f.className = 'fill ' + (z >= 0 ? 'up' : 'dn'); f.style.left = (z >= 0 ? 50 : 50 - pct) + '%'; f.style.width = pct + '%';
+      tone(420 + (z + 3) * 110, .14, 'sine', .08);
+      const v = el.querySelector('.v'); tween(600, u => v.textContent = (S.z[k] >= 0 ? '+' : '') + fmt(S.z[k] * ease(u)));
+      await sleep(260);
+    }
+    await sleep(350); gaugeShown = true;
+    await tween(1300, u => { const e = 1 - Math.pow(1 - u, 3) * Math.cos(u * 9) * (1 - u); drawGauge(S.s * Math.min(1.08, e), true); if (Math.random() < .25) tone(300 + u * 500, .02, 'square', .02); });
+    drawGauge(S.s, true);
+    const call = S.s > 0;
+    $('verdict').innerHTML = call ? '<span style="color:var(--coral)">TÜMÖR ŞÜPHESİ</span>' : '<span style="color:var(--blue)">NORMAL DOKU</span>';
+    tone(call ? 330 : 520, .3, 'triangle', .1);
+    await sleep(900);
+    const ok = call === (S.y === 1); tally.all++; if (ok) tally.ok++;
+    const tr = $('truth'); tr.className = 'face back ' + (ok ? 'ok' : 'no');
+    tr.innerHTML = `${ok ? '✓ DOĞRU' : '✗ YANLIŞ'}<small>Gerçek: ${S.y ? 'pankreas kanseri (PDAC)' : 'normal pankreas'}${S.early === 1 ? ' · <b style="color:var(--gold)">erken evre</b>' : S.early === 0 ? ' · ileri evre' : ''}</small>`;
+    $('flip').classList.add('open'); whoosh(.4, .05);
+    await sleep(350);
+    if (ok) { chime(); flash('rgba(91,214,160,0.5)', .18); if (S.y && S.early === 1) confetti(); } else { buzz(); flash('rgba(255,93,108,0.5)', .18); }
+    $('tOk').textContent = tally.ok; $('tAll').textContent = tally.all; $('tPct').textContent = '%' + Math.round(100 * tally.ok / tally.all);
+    busy = false; $('draw').disabled = false;
+  }
+  $('draw').onclick = drawSample;
+
+  // ---------- 2: Kohort tarama ----------
+  const sw = $('swarm'), sx = sw.getContext('2d'), rc = $('roc'), rx = rc.getContext('2d');
+  let scanState = null;
+  function resetScan() { scanState = null; ['sN', 'sAuc', 'sSens', 'sSpec'].forEach(id => $(id).textContent = id === 'sN' ? '0' : '—'); drawSwarm([], 1); drawRoc([], 0); }
+  function swarmLayout() {
+    const W = sw.width, H = sw.height;
+    const lin = s => W * .06 + W * .88 * Math.min(1, Math.max(0, (s + 2.2) / 4.4));
+    const lanes = { 1: H * .32, 0: H * .72 }, placed = [];
+    return C.samples.map((S, i) => { const x = lin(S.s); let y = lanes[S.y], k = 0;
+      while (placed.some(p => p.l === S.y && Math.hypot(p.x - x, p.y - y) < 15 * devicePixelRatio) && k < 40) { k++; y = lanes[S.y] + (k % 2 ? 1 : -1) * Math.ceil(k / 2) * 9 * devicePixelRatio; }
+      const p = { x, y, l: S.y, S }; placed.push(p); return p; });
+  }
+  function drawSwarm(pts, prog) {
+    const W = sw.width, H = sw.height, d = devicePixelRatio; sx.clearRect(0, 0, W, H);
+    const x0 = W * .06 + W * .88 * (2.2 / 4.4);
+    sx.fillStyle = 'rgba(255,122,89,0.05)'; sx.fillRect(x0, 0, W - x0, H); sx.fillStyle = 'rgba(111,168,255,0.05)'; sx.fillRect(0, 0, x0, H);
+    sx.strokeStyle = '#F2EDE3'; sx.setLineDash([6 * d, 6 * d]); sx.lineWidth = 2 * d; sx.beginPath(); sx.moveTo(x0, 10 * d); sx.lineTo(x0, H - 24 * d); sx.stroke(); sx.setLineDash([]);
+    sx.font = `${14 * d}px Segoe UI`; sx.fillStyle = '#8C97AD'; sx.textAlign = 'left';
+    sx.fillText('Gerçek: TÜMÖR', 8 * d, H * .32 - 30 * d); sx.fillText('Gerçek: NORMAL', 8 * d, H * .72 - 30 * d);
+    sx.textAlign = 'center'; sx.fillText('eşik (0)', x0, H - 6 * d);
+    sx.fillStyle = '#6FA8FF'; sx.fillText('← normal dedi', x0 - W * .18, 18 * d); sx.fillStyle = '#FF7A59'; sx.fillText('tümör dedi →', x0 + W * .18, 18 * d);
+    for (const p of pts) { const r = 6 * d * (p.pop || 1); sx.beginPath(); sx.arc(p.cx ?? p.x, p.cy ?? p.y, r, 0, 6.28);
+      const right = (p.S.s > 0) === (p.l === 1); sx.fillStyle = p.l ? '#FF7A59' : '#6FA8FF'; sx.globalAlpha = p.a ?? 1; sx.fill();
+      if (!right && p.done) { sx.strokeStyle = '#fff'; sx.lineWidth = 1.5 * d; sx.stroke(); } sx.globalAlpha = 1; }
+  }
+  function rocPoints(samples) {
+    const s = [...samples].sort((a, b) => b.s - a.s), P = s.filter(x => x.y).length, N = s.length - P; const pts = [[0, 0]]; let tp = 0, fp = 0;
+    for (const x of s) { x.y ? tp++ : fp++; pts.push([fp / (N || 1), tp / (P || 1)]); } return pts;
+  }
+  function aucOf(samples) { const pos = samples.filter(x => x.y), neg = samples.filter(x => !x.y); if (!pos.length || !neg.length) return null; let c = 0;
+    for (const a of pos) for (const b of neg) c += a.s > b.s ? 1 : a.s === b.s ? .5 : 0; return c / (pos.length * neg.length); }
+  function drawRoc(pts, glow) {
+    const W = rc.width, H = rc.height, d = devicePixelRatio, m = 46 * d, w = Math.min(W - m * 1.5, H - m * 1.6), X = v => m + v * w, Y = v => H - m * .9 - v * w;
+    rx.clearRect(0, 0, W, H); rx.strokeStyle = '#1E2A44'; rx.lineWidth = 1 * d;
+    for (let i = 0; i <= 4; i++) { rx.beginPath(); rx.moveTo(X(i / 4), Y(0)); rx.lineTo(X(i / 4), Y(1)); rx.moveTo(X(0), Y(i / 4)); rx.lineTo(X(1), Y(i / 4)); rx.stroke(); }
+    rx.setLineDash([5 * d, 5 * d]); rx.strokeStyle = '#4a5878'; rx.beginPath(); rx.moveTo(X(0), Y(0)); rx.lineTo(X(1), Y(1)); rx.stroke(); rx.setLineDash([]);
+    rx.fillStyle = '#8C97AD'; rx.font = `${13 * d}px Segoe UI`; rx.textAlign = 'center'; rx.fillText('yanlış alarm oranı →', X(.5), Y(0) + 32 * d);
+    rx.save(); rx.translate(X(0) - 30 * d, Y(.5)); rx.rotate(-Math.PI / 2); rx.fillText('yakalanan tümör →', 0, 0); rx.restore();
+    rx.fillText('yazı tura', X(.62), Y(.55));
+    if (pts.length > 1) { rx.save(); rx.shadowColor = '#FF7A59'; rx.shadowBlur = 18 * d * (glow || .5); rx.strokeStyle = '#FF7A59'; rx.lineWidth = 3.5 * d; rx.beginPath();
+      pts.forEach(([fx, ty], i) => i ? rx.lineTo(X(fx), Y(ty)) : rx.moveTo(X(fx), Y(ty))); rx.stroke(); rx.restore();
+      rx.fillStyle = 'rgba(255,122,89,0.10)'; rx.beginPath(); rx.moveTo(X(0), Y(0)); pts.forEach(([fx, ty]) => rx.lineTo(X(fx), Y(ty))); rx.lineTo(X(1), Y(0)); rx.fill(); }
+  }
+  async function runScan() {
+    if (busy) return; busy = true; $('scanGo').disabled = true; resetScan(); const L = swarmLayout(), W = sw.width, H = sw.height;
+    const order = L.map((p, i) => i).sort(() => Math.random() - .5), shown = [], seen = []; window.__liveShown = shown;
+    whoosh(1.2, .06);
+    const per = Math.max(18, Math.min(70, 3800 / L.length));
+    for (const idx of order) {
+      const p = L[idx]; p.cx = W / 2; p.cy = -20; p.a = .2; p.pop = 1.8; shown.push(p); seen.push(p.S);
+      tween(520, u => { const e = ease(u); p.cx = W / 2 + (p.x - W / 2) * e; p.cy = -20 + (p.y + 20) * e; p.a = .2 + .8 * e; p.pop = 1.8 - .8 * e; if (u >= 1) p.done = true; });
+      tone(p.S.y ? 520 + p.S.s * 80 : 300 + p.S.s * 40, .05, 'sine', .035);
+      const a = aucOf(seen); $('sN').textContent = seen.length; if (a !== null) $('sAuc').textContent = fmt(a);
+      const P = seen.filter(x => x.y), N = seen.filter(x => !x.y);
+      if (P.length) $('sSens').textContent = '%' + Math.round(100 * P.filter(x => x.s > 0).length / P.length);
+      if (N.length) $('sSpec').textContent = '%' + Math.round(100 * N.filter(x => x.s <= 0).length / N.length);
+      drawRoc(rocPoints(seen), .5);
+      await sleep(per);
+    }
+    await tween(700, () => drawSwarm(shown, 1));
+    drawSwarm(shown, 1); drawRoc(rocPoints(seen), 1.6); chime(); flash('rgba(255,122,89,0.45)', .15);
+    $('scanGo').disabled = false; $('sAuc').animate([{ transform: 'scale(1.35)' }, { transform: 'scale(1)' }], { duration: 600, easing: 'cubic-bezier(.3,1.6,.5,1)' });
+    scanState = { shown, seen }; busy = false;
+  }
+  // ---------- 3: Rastgele panellerle yarış ----------
+  const ra = $('race'), rax = ra.getContext('2d');
+  function resetRace() { $('rWin').textContent = '—'; $('rWin').style.color = ''; $('rTxt').innerHTML = `Aynı sayıda (8), aynı yöntemle skorlanmış <b>2000 rastgele gen paneli</b> ${C.id} kohortunda ne kadar iyi? Başlat'a bas.`; drawRace([], null, 0); }
+  function drawRace(vals, ours, glow) {
+    const W = ra.width, H = ra.height, d = devicePixelRatio, m = 50 * d, lo = Math.min(.3, Math.floor(Math.min(...C.random_auc) * 10) / 10), hi = 1.0, bins = 70, X = v => m + (W - 2 * m) * (v - lo) / (hi - lo), base = H - m;
+    rax.clearRect(0, 0, W, H); const cnt = new Array(bins).fill(0); for (const v of vals) cnt[Math.min(bins - 1, Math.max(0, Math.floor((v - lo) / (hi - lo) * bins)))]++;
+    const mx = Math.max(40, ...cnt), bw = (W - 2 * m) / bins;
+    rax.strokeStyle = '#1E2A44'; rax.lineWidth = d; rax.beginPath(); rax.moveTo(m, base); rax.lineTo(W - m, base); rax.stroke();
+    rax.fillStyle = '#8C97AD'; rax.font = `${13 * d}px Segoe UI`; rax.textAlign = 'center';
+    for (let t = Math.round(lo * 10); t <= 10; t++) { rax.fillText(fmt(t / 10, 1), X(t / 10), base + 22 * d); }
+    rax.fillText('AUC (sağa doğru daha iyi) · 0,5 = yazı tura', W / 2, base + 42 * d);
+    rax.setLineDash([5 * d, 5 * d]); rax.strokeStyle = '#4a5878'; rax.beginPath(); rax.moveTo(X(.5), m * .4); rax.lineTo(X(.5), base); rax.stroke(); rax.setLineDash([]);
+    cnt.forEach((c, i) => { const h = (base - m * .6) * c / mx; const g = rax.createLinearGradient(0, base - h, 0, base); g.addColorStop(0, '#9cc3ff'); g.addColorStop(1, '#3b5c99');
+      rax.fillStyle = g; rax.fillRect(m + i * bw + 1, base - h, bw - 2, h); });
+    if (ours !== null) { const x = X(ours); rax.save(); rax.shadowColor = '#FF7A59'; rax.shadowBlur = 30 * d * glow; rax.strokeStyle = '#FF7A59'; rax.lineWidth = 5 * d;
+      rax.beginPath(); rax.moveTo(x, m * .5); rax.lineTo(x, base); rax.stroke(); rax.restore();
+      rax.fillStyle = '#FF7A59'; rax.font = `700 ${22 * d}px Georgia`; rax.textAlign = 'right'; rax.fillText(`Fısıltı paneli · ${fmt(ours)}`, x - 10 * d, m * .5 + 18 * d); }
+  }
+  async function runRace() {
+    if (busy) return; busy = true; $('raceGo').disabled = true; resetRace(); const all = C.random_auc, shown = [];
+    whoosh(1.5, .05); const steps = 90, chunk = Math.ceil(all.length / steps);
+    for (let s = 0; s < steps; s++) { shown.push(...all.slice(s * chunk, (s + 1) * chunk)); drawRace(shown, null, 0); if (s % 3 === 0) tone(200 + Math.random() * 400, .03, 'triangle', .025);
+      $('rWin').textContent = shown.length; await sleep(28); }
+    $('rTxt').innerHTML = '2000 rastgele panelin çoğu yazı turanın (0,5) etrafında toplandı. Şimdi bizim panelimiz…'; await sleep(1200);
+    tone(180, 1.2, 'sawtooth', .03, 500);
+    await tween(900, u => drawRace(shown, .5 + (C.auc - .5) * ease(u), u));
+    drawRace(shown, C.auc, 1.5); const beat = all.filter(v => v >= C.auc).length;
+    $('rWin').textContent = beat === 0 ? '0 / 2000' : `${beat} / 2000`; $('rWin').style.color = 'var(--coral)';
+    $('rTxt').innerHTML = `Fısıltı paneli AUC <b>${fmt(C.auc)}</b>. 2000 rastgele panelden <b>${beat === 0 ? 'hiçbiri' : beat + ' tanesi'}</b> bu kadar iyi değil` +
+      (beat === 0 ? '. Sonuç şans eseri değil.' : ' ya da eşit. Sonuç şans eseri değil.') + `<br><br>Rastgele panellerin ortalaması: <b>${fmt(all.reduce((a, b) => a + b, 0) / all.length)}</b>`;
+    chime(); confetti(); flash('rgba(255,122,89,0.5)', .2); busy = false; $('raceGo').disabled = false;
+  }
+  $('raceGo').onclick = runRace;
+
+  // ---------- Boyutlar ----------
+  function fit(c) { const r = c.getBoundingClientRect(); if (r.width && r.height) { c.width = r.width * devicePixelRatio; c.height = r.height * devicePixelRatio; } }
+  function fitAll() { [gc, sw, rc, ra].forEach(fit); drawGauge(lastShown(), gaugeShown); if (scanState) { drawSwarm(swarmLayout().map(p => ({ ...p, done: true })), 1); drawRoc(rocPoints(scanState.seen), 1.6); } else { drawSwarm([], 1); drawRoc([], 0); } if (!busy) resetRaceKeep(); }
+  const lastShown = () => (lastIdx >= 0 && gaugeShown ? C.samples[lastIdx].s : 0);
+  function resetRaceKeep() { if ($('rWin').textContent === '—') drawRace([], null, 0); else drawRace(C.random_auc, C.auc, 1.5); }
+
+  // ---------- Klavye ----------
+  addEventListener('keydown', e => {
+    if (e.key === '1') setView('v1'); else if (e.key === '2') setView('v2'); else if (e.key === '3') setView('v3');
+    else if (e.key === 'q' || e.key === 'Q') setCohort(0); else if (e.key === 'w' || e.key === 'W') setCohort(1); else if (e.key === 'e' || e.key === 'E') setCohort(2);
+    else if (e.key === 'm' || e.key === 'M') $('mute').click();
+    else if (e.key === ' ') { e.preventDefault(); if (view === 'v1') drawSample(); else if (view === 'v2') scanGo(); else runRace(); }
+  });
+  renderCohorts(); requestAnimationFrame(() => { fitAll(); resetSingle(); resetScan(); resetRace(); });
+  async function scanGo() {
+    if (busy) return; const loop = () => { if (busy && view === 'v2') { drawSwarm(window.__liveShown || [], 1); requestAnimationFrame(loop); } };
+    requestAnimationFrame(loop); await runScan();
+  }
+  $('scanGo').onclick = scanGo;
+  // ikinci görünüme geçince tarama düğmesi gibi davranan tıklama alanı
+  })();
+</script>
+</body>
+</html>
