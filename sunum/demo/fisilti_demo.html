@@ -103,7 +103,6 @@ kbd { border: 1px solid var(--line); border-radius: 5px; padding: 1px 6px; backg
   <header>
     <div class="logo">Fısıltı<span>.</span></div>
     <div class="sub">Canlı test istasyonu · 8 proteinlik aday panel</div>
-    <div class="live"><div class="dot"></div><span id="clock"></span></div>
   </header>
   <div class="bar">
     <div id="cohorts" class="bar"></div>
@@ -123,7 +122,8 @@ kbd { border: 1px solid var(--line); border-radius: 5px; padding: 1px 6px; backg
         <div class="vial"><div class="fluid" id="fluid"></div><div id="bubbles"></div></div>
         <div class="meta" id="smeta">Kimliksiz doku örneği<br>Model bu kohortu hiç görmedi</div>
         <button class="btn primary" id="draw">Yeni örnek çek <kbd>Boşluk</kbd></button>
-        <div class="score-tally"><div><b id="tOk">0</b>DOĞRU</div><div><b id="tAll">0</b>TOPLAM</div><div><b id="tPct">—</b>İSABET</div></div>
+        <div class="score-tally"><div><b id="tPct">—</b>KOHORT İSABETİ</div></div>
+        <div class="meta" id="tSess">Bu oturum: henüz örnek çekilmedi</div>
       </div>
       <div class="card">
         <h3>8 proteinin ifadesi · kohort ortalamasına göre (z-skor)</h3>
@@ -214,7 +214,6 @@ kbd { border: 1px solid var(--line); border-radius: 5px; padding: 1px 6px; backg
     requestAnimationFrame(bgLoop);
   }
   bgResize(); addEventListener('resize', () => { bgResize(); fitAll(); }); requestAnimationFrame(bgLoop);
-  setInterval(() => $('clock').textContent = new Date().toLocaleTimeString('tr-TR') + ' · CANLI', 1000);
 
   function flash(color, a = .35) { const f = $('flash'); f.style.background = color; f.animate([{ opacity: a }, { opacity: 0 }], { duration: 600, easing: 'ease-out' }); }
   function confetti() {
@@ -231,7 +230,7 @@ kbd { border: 1px solid var(--line); border-radius: 5px; padding: 1px 6px; backg
     D.cohorts.forEach((c, i) => { const b = document.createElement('button'); b.className = 'chip' + (c === C ? ' on' : '');
       b.innerHTML = `${c.id}<small>${c.n_pdac} tümör · ${c.n_normal} normal</small>`; b.title = c.desc; b.onclick = () => setCohort(i); $('cohorts').appendChild(b); });
   }
-  function setCohort(i) { if (busy) return; C = D.cohorts[i]; renderCohorts(); tone(660, .08, 'triangle', .08); resetSingle(); resetScan(); resetRace(); }
+  function setCohort(i) { if (busy) return; C = D.cohorts[i]; tally = { ok: 0, all: 0 }; $('tSess').textContent = 'Bu oturum: henüz örnek çekilmedi'; renderCohorts(); tone(660, .08, 'triangle', .08); resetSingle(); resetScan(); resetRace(); }
 
   // ---------- Görünümler ----------
   document.querySelectorAll('.tab').forEach(t => t.onclick = () => setView(t.dataset.v));
@@ -263,7 +262,9 @@ kbd { border: 1px solid var(--line); border-radius: 5px; padding: 1px 6px; backg
   }
   function resetSingle() { geneEls.forEach(el => { const f = el.querySelector('.fill'); f.style.width = '0'; f.style.left = '50%'; el.querySelector('.v').textContent = '—'; });
     $('verdict').innerHTML = '&nbsp;'; $('flip').classList.remove('open'); $('sid').textContent = '#—'; $('fluid').style.height = '0%'; gaugeShown = false; drawGauge(0, false);
-    $('smeta').innerHTML = `${C.id} · ${C.desc}<br>Model bu kohortu hiç görmedi`; }
+    $('smeta').innerHTML = `${C.id} · ${C.desc}<br>Model bu kohortu hiç görmedi`;
+    const acc = C.samples.filter(x => (x.s > 0) === (x.y === 1)).length;
+    $('tPct').textContent = '%' + Math.round(100 * acc / C.samples.length); $('tPct').title = `${acc} / ${C.samples.length} örnek`; }
   async function drawSample() {
     if (busy) return; busy = true; $('draw').disabled = true; resetSingle();
     let i; do { i = Math.floor(Math.random() * C.samples.length); } while (i === lastIdx && C.samples.length > 1); lastIdx = i;
@@ -292,7 +293,7 @@ kbd { border: 1px solid var(--line); border-radius: 5px; padding: 1px 6px; backg
     $('flip').classList.add('open'); whoosh(.4, .05);
     await sleep(350);
     if (ok) { chime(); flash('rgba(91,214,160,0.5)', .18); if (S.y && S.early === 1) confetti(); } else { buzz(); flash('rgba(255,93,108,0.5)', .18); }
-    $('tOk').textContent = tally.ok; $('tAll').textContent = tally.all; $('tPct').textContent = '%' + Math.round(100 * tally.ok / tally.all);
+    $('tSess').textContent = `Bu oturum: ${tally.ok} / ${tally.all} doğru`;
     busy = false; $('draw').disabled = false;
   }
   $('draw').onclick = drawSample;
