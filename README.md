@@ -40,7 +40,7 @@ Başvuru dosyasından sapmalar ve yöntemsel kararlar: [docs/KARARLAR.md](docs/K
 | WP4 | SHAP, pathway zenginleştirme | ✅ |
 | WP5 | Sekresyon/plazma filtresi, panel tasarımı | ✅ |
 | WP6 | Kohortlar arası doğrulama, CA19-9 kıyası, DCA | ✅ |
-| WP7 | Paketleme (Docker, Nextflow), rapor, poster | ⏳ |
+| WP7 | Paketleme (Docker, Nextflow), rapor | ⏳ |
 
 ## Kurulum
 
@@ -86,7 +86,6 @@ src/fisilti/ yeniden kullanılabilir Python paketi
 scripts/     WP bazlı çalıştırılabilir adımlar (wpN_MM_*.py)
 data/        raw → interim → processed (git dışı)
 results/     şekiller ve tablolar
-docs/        karar günlüğü, rapor taslakları
 tests/       birim testleri (pytest)
 ```
 
